@@ -1,110 +1,100 @@
-" Vim syntax file
-" Language:             calendar(1) input file
-" Previous Maintainer:  Nikolai Weibull <now@bitwi.se>
-" Latest Revision:      2006-04-19
+" =============================================================================
+" Filename: syntax/calendar.vim
+" Author: itchyny
+" License: MIT License
+" Last Change: 2017/04/26 22:14:34.
+" =============================================================================
 
-if exists("b:current_syntax")
+if version < 700
+  syntax clear
+elseif exists('b:current_syntax')
   finish
 endif
 
-let s:cpo_save = &cpo
+let s:save_cpo = &cpo
 set cpo&vim
 
-syn keyword calendarTodo          contained TODO FIXME XXX NOTE
+let s:fg_color = calendar#color#normal_fg_color()
+let s:bg_color = calendar#color#normal_bg_color()
+let s:comment_fg_color = calendar#color#comment_fg_color()
+let s:select_color = calendar#color#gen_color(s:fg_color, s:bg_color, 1, 4)
+let s:is_win32cui = (has('win32') || has('win64')) && !has('gui_running')
+let s:is_dark = calendar#color#is_dark()
 
-syn region  calendarComment       start='/\*' end='\*/'
-                                  \ contains=calendarTodo,@Spell
-
-syn region  calendarCppString     start=+L\="+ skip=+\\\\\|\\"\|\\$+ excludenl
-                                  \ end=+"+ end='$' contains=calendarSpecial
-syn match   calendarSpecial       display contained '\\\%(x\x\+\|\o\{1,3}\|.\|$\)'
-syn match   calendarSpecial       display contained "\\\(u\x\{4}\|U\x\{8}\)"
-
-syn region  calendarPreCondit     start='^\s*#\s*\%(if\|ifdef\|ifndef\|elif\)\>'
-                                  \ skip='\\$' end='$'
-                                  \ contains=calendarComment,calendarCppString
-syn match   calendarPreCondit     display '^\s*#\s*\%(else\|endif\)\>'
-syn region  calendarCppOut        start='^\s*#\s*if\s\+0\+' end='.\@=\|$'
-                                  \ contains=calendarCppOut2
-syn region  calendarCppOut2       contained start='0'
-                                  \ end='^\s*#\s*\%(endif\|else\|elif\)\>'
-                                  \ contains=calendarSpaceError,calendarCppSkip
-syn region  calendarCppSkip       contained
-                                  \ start='^\s*#\s*\%(if\|ifdef\|ifndef\)\>'
-                                  \ skip='\\$' end='^\s*#\s*endif\>'
-                                  \ contains=calendarSpaceError,calendarCppSkip
-syn region  calendarIncluded      display contained start=+"+ skip=+\\\\\|\\"+
-                                  \ end=+"+
-syn match   calendarIncluded      display contained '<[^>]*>'
-syn match   calendarInclude       display '^\s*#\s*include\>\s*["<]'
-                                  \ contains=calendarIncluded
-syn cluster calendarPreProcGroup  contains=calendarPreCondit,calendarIncluded,
-                                  \ calendarInclude,calendarDefine,
-                                  \ calendarCppOut,calendarCppOut2,
-                                  \ calendarCppSkip,calendarString,
-                                  \ calendarSpecial,calendarTodo
-syn region  calendarDefine        start='^\s*#\s*\%(define\|undef\)\>'
-                                  \ skip='\\$' end='$'
-                                  \ contains=ALLBUT,@calendarPreProcGroup
-syn region  calendarPreProc       start='^\s*#\s*\%(pragma\|line\|warning\|warn\|error\)\>'
-                                  \ skip='\\$' end='$' keepend
-                                  \ contains=ALLBUT,@calendarPreProcGroup
-
-syn keyword calendarKeyword       CHARSET BODUN LANG
-syn case ignore
-syn keyword calendarKeyword       Easter Pashka
-syn case match
-
-syn case ignore
-syn match   calendarNumber        display '\<\d\+\>'
-syn keyword calendarMonth         Jan[uary] Feb[ruary] Mar[ch] Apr[il] May
-                                  \ Jun[e] Jul[y] Aug[ust] Sep[tember]
-                                  \ Oct[ober] Nov[ember] Dec[ember]
-syn match   calendarMonth         display '\<\%(Jan\|Feb\|Mar\|Apr\|May\|Jun\|Jul\|Aug\|Sep\|Oct\|Nov\|Dec\)\.'
-syn keyword calendarWeekday       Mon[day] Tue[sday] Wed[nesday] Thu[rsday]
-syn keyword calendarWeekday       Fri[day] Sat[urday] Sun[day]
-syn match   calendarWeekday       display '\<\%(Mon\|Tue\|Wed\|Thu\|Fri\|Sat\|Sun\)\.'
-                                  \ nextgroup=calendarWeekdayMod
-syn match   calendarWeekdayMod    display '[+-]\d\+\>'
-syn case match
-
-syn match   calendarTime          display '\<\%([01]\=\d\|2[0-3]\):[0-5]\d\%(:[0-5]\d\)\='
-syn match   calendarTime          display '\<\%(0\=[1-9]\|1[0-2]\):[0-5]\d\%(:[0-5]\d\)\=\s*[AaPp][Mm]'
-
-syn match calendarVariable        '\*'
-
-if exists("c_minlines")
-  let b:c_minlines = c_minlines
-else
-  if !exists("c_no_if0")
-    let b:c_minlines = 50       " #if 0 constructs can be long
+if !has('gui_running')
+  if s:is_win32cui
+    if s:is_dark
+      let s:select_color = 8
+      let s:today_color = 10
+      let s:today_fg_color = 0
+      let s:othermonth_fg_color = 8
+    else
+      let s:select_color = 7
+      let s:today_color = 2
+      let s:today_fg_color = 15
+      let s:othermonth_fg_color = 7
+    endif
+    let s:weekday_color = 8
+    let s:weekday_fg_color = 0
+    let s:sunday_bg_color = 12
+    let s:saturday_bg_color = 9
+    let s:sunday_fg_color = 0
+    let s:saturday_fg_color = 0
+    let s:sunday_title_fg_color = s:sunday_fg_color
+    let s:saturday_title_fg_color = s:saturday_fg_color
+  elseif s:is_dark
+    let s:sunday_bg_color = calendar#color#select_rgb(s:fg_color, 0, 5)
+    let s:saturday_bg_color = calendar#color#select_rgb(s:fg_color, 2, 5)
+    let s:sunday_fg_color = calendar#color#gen_color(s:sunday_bg_color, s:bg_color, 1, 7)
+    let s:saturday_fg_color = calendar#color#gen_color(s:saturday_bg_color, s:bg_color, 1, 7)
+    let s:today_color = calendar#color#select_rgb(s:fg_color, 1, 5)
+    let s:today_fg_color = calendar#color#gen_color(s:today_color, s:bg_color, 1, 5)
   else
-    let b:c_minlines = 15       " mostly for () constructs
+    let s:sunday_fg_color = calendar#color#select_rgb(s:bg_color, 0, 6)
+    let s:saturday_fg_color = calendar#color#select_rgb(s:bg_color, 2, 6)
+    let s:sunday_bg_color = calendar#color#gen_color(s:sunday_fg_color, s:bg_color, 1, 4)
+    let s:saturday_bg_color = calendar#color#gen_color(s:saturday_fg_color, s:bg_color, 1, 4)
+    let s:today_fg_color = calendar#color#gen_color(calendar#color#select_rgb(s:fg_color, 1, 6), s:fg_color, 4, 3)
+    let s:today_color = calendar#color#gen_color(s:today_fg_color, s:bg_color, 1, 3)
   endif
+else
+  let s:sunday_fg_color = calendar#color#select_rgb(s:is_dark ? s:fg_color : s:bg_color, 1)
+  let s:saturday_fg_color = calendar#color#select_rgb(s:is_dark ? s:fg_color : s:bg_color, 4)
+  let s:sunday_bg_color = calendar#color#gen_color(s:sunday_fg_color, s:is_dark ? s:fg_color : s:bg_color, 1, 3)
+  let s:saturday_bg_color = calendar#color#gen_color(s:saturday_fg_color, s:is_dark ? s:fg_color : s:bg_color, 1, 3)
+  let s:today_fg_color = calendar#color#gen_color(calendar#color#select_rgb(s:is_dark ? s:fg_color : s:bg_color, 2), s:is_dark ? s:bg_color : s:fg_color, 4, 3)
+  let s:today_color = calendar#color#gen_color(s:today_fg_color, s:is_dark ? s:fg_color : s:bg_color, 1, 3)
 endif
-exec "syn sync ccomment calendarComment minlines=" . b:c_minlines
+if !s:is_win32cui
+  let s:weekday_color = calendar#color#gen_color(s:fg_color, s:bg_color, 1, 5)
+  let s:weekday_fg_color = calendar#color#gen_color(s:fg_color, s:bg_color, 3, 2)
+  let s:othermonth_fg_color = calendar#color#gen_color(s:fg_color, s:bg_color, 3, 4)
+  let s:sunday_title_fg_color = calendar#color#gen_color(s:sunday_fg_color, s:sunday_bg_color, 3, 1)
+  let s:saturday_title_fg_color = calendar#color#gen_color(s:saturday_fg_color, s:saturday_bg_color, 3, 1)
+endif
 
-hi def link calendarTodo          Todo
-hi def link calendarComment       Comment
-hi def link calendarCppString     String
-hi def link calendarSpecial       SpecialChar
-hi def link calendarPreCondit     PreCondit
-hi def link calendarCppOut        Comment
-hi def link calendarCppOut2       calendarCppOut
-hi def link calendarCppSkip       calendarCppOut
-hi def link calendarIncluded      String
-hi def link calendarInclude       Include
-hi def link calendarDefine        Macro
-hi def link calendarPreProc       PreProc
-hi def link calendarKeyword       Keyword
-hi def link calendarNumber        Number
-hi def link calendarMonth         String
-hi def link calendarWeekday       String
-hi def link calendarWeekdayMod    Special
-hi def link calendarTime          Number
-hi def link calendarVariable      Identifier
+call calendar#color#syntax('Select', '', s:select_color, '')
+call calendar#color#syntax('Sunday', s:sunday_fg_color, s:sunday_bg_color, '')
+call calendar#color#syntax('Saturday', s:saturday_fg_color, s:saturday_bg_color, '')
+call calendar#color#syntax('TodaySunday', s:sunday_fg_color, s:sunday_bg_color, 'bold')
+call calendar#color#syntax('TodaySaturday', s:saturday_fg_color, s:saturday_bg_color, 'bold')
+call calendar#color#syntax('Today', s:today_fg_color, s:today_color, 'bold')
+call calendar#color#syntax('DayTitle', s:weekday_fg_color, s:weekday_color, '')
+call calendar#color#syntax('SundayTitle', s:sunday_title_fg_color, s:sunday_bg_color, '')
+call calendar#color#syntax('SaturdayTitle', s:saturday_title_fg_color, s:saturday_bg_color, '')
+call calendar#color#syntax('OtherMonth', s:othermonth_fg_color, '', '')
+call calendar#color#syntax('OtherMonthSelect', s:othermonth_fg_color, s:select_color, '')
+call calendar#color#syntax('NormalSpace', s:bg_color, s:fg_color, '')
+call calendar#color#syntax('CommentSelect', s:comment_fg_color, s:select_color, '')
 
-let b:current_syntax = "calendar"
+highlight link CalendarComment Comment
 
-let &cpo = s:cpo_save
-unlet s:cpo_save
+unlet! s:fg_color s:bg_color s:comment_fg_color s:select_color s:is_win32cui s:is_dark
+      \ s:today_color s:today_fg_color s:othermonth_fg_color s:weekday_color s:weekday_fg_color
+      \ s:sunday_bg_color s:sunday_fg_color s:sunday_title_fg_color
+      \ s:saturday_bg_color s:saturday_fg_color s:saturday_title_fg_color
+
+let b:current_syntax = 'calendar'
+
+let &cpo = s:save_cpo
+unlet s:save_cpo
