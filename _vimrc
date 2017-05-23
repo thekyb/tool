@@ -79,8 +79,7 @@ inoremap <S-Tab> <C-d>
 noremap <Space>q :q<CR>
 noremap <Space>Q :q!<CR>
 "Quick quit commadn
-noremap <Space>q :q<CR>
-noremap <Space>Q :q!<CR>
+noremap <Space>c :Calendar<CR>
 "next tabpage
 noremap <C-Tab> :tabnext<CR>
 noremap <C-n> :tabe<CR>
