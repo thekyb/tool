@@ -13,13 +13,18 @@ set ruler laststatus=2 number title hlsearch
 set hlsearch  
 set autoread
 set backspace=indent,eol,start
+
+" make a folding based on tab.
 set foldmethod=indent
 set foldlevel=7
-
-noremap zh :set foldlevel=1<CR>
+noremap zh :set foldlevel=0<CR>
 noremap zk zr
 noremap zj zm
 noremap zl :set foldlevel=10<CR>
+" copy file names
+nmap yf :let @* = expand("%")<CR>
+nmap yd :let @* = expand("%:p")<CR>
+
 "test here to 
 " noremap zh :set foldlevel=fildlevel-1<CR>
 " noremap zl zr
@@ -79,8 +84,7 @@ inoremap <S-Tab> <C-d>
 noremap <Space>q :q<CR>
 noremap <Space>Q :q!<CR>
 "Quick quit commadn
-noremap <Space>q :q<CR>
-noremap <Space>Q :q!<CR>
+noremap <Space>c :Calendar<CR>
 "next tabpage
 noremap <C-Tab> :tabnext<CR>
 noremap <C-n> :tabe<CR>
@@ -105,7 +109,9 @@ set noswapfile
 set guioptions -=T
 
 "NERDTree"
+let NERDTreeShowHidden=1
 noremap <Space>e :NERDTree<CR>
+noremap <Space>E :NERDTree
 noremap <Space>t :FufFile<CR>
 
 "...................................................................
@@ -158,11 +164,10 @@ map <C-K> <C-W><C-K>
 map <C-L> <C-W><C-L>
 map <C-H> <C-W><C-H>
 
-"Page down and up
-noremap ê 10j
+"Page down and up :    'ê'= Alt + j   and  'ë' = Alt + k
+noremap ê 10j 
 noremap ë 10k
-" nnoremap j k
-" nnoremap k j
+"end Page down and up 
 
 set diffexpr=MyDiff()
 function MyDiff()
