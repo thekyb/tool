@@ -13,13 +13,18 @@ set ruler laststatus=2 number title hlsearch
 set hlsearch  
 set autoread
 set backspace=indent,eol,start
+
+" make a folding based on tab.
 set foldmethod=indent
 set foldlevel=7
-
 noremap zh :set foldlevel=1<CR>
 noremap zk zr
 noremap zj zm
 noremap zl :set foldlevel=10<CR>
+" copy file names
+nmap yf :let @* = expand("%")<CR>
+nmap yd :let @* = expand("%:p")<CR>
+
 "test here to 
 " noremap zh :set foldlevel=fildlevel-1<CR>
 " noremap zl zr
