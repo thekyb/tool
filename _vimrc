@@ -1,5 +1,12 @@
+" I Forgot what is this
+" map <C-I> <C-Y>
+source $VIMRUNTIME/vimrc_example.vim
+source $VIMRUNTIME/mswin.vim
+hi Folded guibg=#707070
+behave mswin
 set encoding=utf-8
 set gfn=Consolas:h10
+set cursorcolumn
 map <C-F2> :set cursorcolumn!<CR>
 set cursorline
 set statusline+=%F
@@ -37,9 +44,6 @@ nmap yd :let @* = expand("%:p")<CR>
 "set foldopen=all
 "set foldclose=all
 colorscheme obsidian2
-let &scrolloff=500-&scrolloff
-map <C-F3> :let &scrolloff=500-&scrolloff<CR>
-map <C-I> <C-Y>
 "...................................................................
 syntax on
 set nocursorcolumn
@@ -47,13 +51,11 @@ set nocursorline
 " set norelativenumber
 syntax sync minlines=256
 "...................................................................
-source $VIMRUNTIME/vimrc_example.vim
-source $VIMRUNTIME/mswin.vim
-hi Folded guibg=#707070
-behave mswin
 "Visual block find all
 vnoremap // y/<C-R>"<CR>
 
+map <C-F3> :let &scrolloff=110-&scrolloff<CR>
+set scrolloff=100
 "...................................................................
 "Added in 2016. 7. 20 : 
 map <F11> <Esc>:call libcallnr("gvimfullscreen.dll", "ToggleFullScreen", 0)<CR> 
