@@ -128,16 +128,18 @@ let NERDTreeShowHidden=1
 let NERDTreeShowBookmarks=1
 noremap <Space>e :NERDTree<CR>
 noremap <Space>E :NERDTree
-noremap <Space>t :FufFile<CR>
 
+""""""""""""""""""""""""""""""""""""""
+"           CtrlP                    "
+""""""""""""""""""""""""""""""""""""""
+noremap <Space>d :CtrlP<CR>
+noremap <Space>D :CtrlP
 """"""""""""""""""""""""""""""""""""""
 "           StartUp                  "
 """"""""""""""""""""""""""""""""""""""
 function! StartUp()
     simalt ~x
-    " if 0 == argc()
-        NERDTree
-    " end
+    NERDTree
 endfunction
 
 autocmd VimEnter * call StartUp()
@@ -274,4 +276,35 @@ fu! SeeTab()
 endfunc
 com! -nargs=0 SeeTab :call SeeTab()
 
+" Note: Skip initialization for vim-tiny or vim-small.
+if 0 | endif
 
+if &compatible
+  set nocompatible               " Be iMproved
+endif
+
+" Required:
+set runtimepath+=~/.vim/bundle/neobundle.vim/
+
+" Required:
+call neobundle#begin(expand('~/.vim/bundle/'))
+
+" Let NeoBundle manage NeoBundle
+" Required:
+NeoBundleFetch 'Shougo/neobundle.vim'
+
+" My Bundles here:
+" Refer to |:NeoBundle-examples|.
+" Note: You don't set neobundle setting in .gvimrc!
+NeoBundle 'https://github.com/Shougo/vimproc.vim.git'
+NeoBundle 'https://github.com/kien/ctrlp.vim.git'
+NeoBundle 'https://github.com/tpope/vim-fugitive.git'
+
+call neobundle#end()
+
+" Required:
+filetype plugin indent on
+
+" If there are uninstalled bundles found on startup,
+" this will conveniently prompt you to install them.
+NeoBundleCheck

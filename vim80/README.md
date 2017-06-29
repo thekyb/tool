@@ -1,101 +1,148 @@
-# A calendar application for Vim
-### Vim meets a next generation application
+[![Stories in Ready](https://badge.waffle.io/Shougo/neobundle.vim.png)](https://waffle.io/Shougo/neobundle.vim)
 
-![calendar.vim](https://raw.githubusercontent.com/wiki/itchyny/calendar.vim/image/image.png)
+**Note**: Active developement on NeoBundle has stopped. The only future changes will be bug fixes.
 
-Press E key to view the event list, and T key to view the task list.
-Also, press ? key to view a quick help.
+Please see [Dein.vim](https://github.com/Shougo/dein.vim) -- A faster, well-tested plugin manager for Vim and Neovim. It can do everything NeoBundle does, including asynchronous installs.
 
-![calendar.vim](https://raw.githubusercontent.com/wiki/itchyny/calendar.vim/image/views.png)
+## About
 
-## Basic Usage
+NeoBundle is a next generation Vim plugin manager. This plugin is based on
+[Vundle](https://github.com/gmarik/vundle), but I renamed and added tons of
+features,  while Vundle tends to stay simple.
 
-    :Calendar
+Requirements:
+* Vim 7.2.051 or above.
+* "git" command in $PATH (if you want to install github or vim.org plugins)
 
-![calendar.vim](https://raw.githubusercontent.com/wiki/itchyny/calendar.vim/image/image0.png)
+Recommends:
+* [vimproc](https://github.com/Shougo/vimproc.vim) if you want to
+  install/update asynchronously in Unite interface.
 
-    :Calendar 2000 1 1
+Note: In :NeoBundleUpdate/:NeoBundleInstall commands, you can parallel update by
+vimproc, but you cannot do other work unlike Unite interface.
 
-![calendar.vim](https://raw.githubusercontent.com/wiki/itchyny/calendar.vim/image/image1.png)
+Note: Neobundle is not a stable plugin manager.  If you want a stable plugin
+manager, you should use Vundle plugin.  It well works widely and it is more
+tested.  If you want to use extended features, you can use neobundle.
 
-    :Calendar -view=year
+Vundle features: Stable, simple, good for beginners
 
-![calendar.vim](https://raw.githubusercontent.com/wiki/itchyny/calendar.vim/image/image2.png)
+Neobundle features: Early development (may break compatibility), very complex,
+good for plugin power users (for example, 50+ plugins and over 1000 lines
+.vimrc, ...)
 
-    :Calendar -view=year -split=vertical -width=27
+Note: Neobunle only accepts "https" or "ssh".
+https://glyph.twistedmatrix.com/2015/11/editor-malware.html
 
-![calendar.vim](https://raw.githubusercontent.com/wiki/itchyny/calendar.vim/image/image3.png)
+## How it works
 
-    :Calendar -view=year -split=horizontal -position=below -height=12
+Plugins are defined in NeoBundle by calling `NeoBundle '<plugin repository
+location>'`.  NeoBundle assumes Github as the default location for plugins, so
+for most plugins you can simply use `NeoBundle 'username/plugin'` rather than
+using the absolute URL of the plugin.  These calls should be made in your
+.vimrc file.  Once you have defined these, you must call `NeoBundleInstall`,
+and NeoBundle will clone all of the repos into the desired folder (generally
+`~/.vim/bundle`) and load them into Vim.  If you want to update these
+repositories, simply call `NeoBundleUpdate`.
 
-![calendar.vim](https://raw.githubusercontent.com/wiki/itchyny/calendar.vim/image/image4.png)
+A few other useful commands:
+- `:NeoBundleList`          - list configured bundles
+- `:NeoBundleInstall(!)`    - install (update) bundles
 
-    :Calendar -first_day=monday
+Refer to `:help neobundle` for more examples and for a full list of commands.
 
-![calendar.vim](https://raw.githubusercontent.com/wiki/itchyny/calendar.vim/image/image5.png)
+## Quick start
 
-    :Calendar -view=clock
+### 1. Install NeoBundle
 
-![calendar.vim](https://raw.githubusercontent.com/wiki/itchyny/calendar.vim/image/image6.png)
+#### If you are using Unix/Linux or Mac OS X.
 
-You can switch between views with &lt; and &gt; keys.
+1. Run below script.
+
+     ```
+     $ curl https://raw.githubusercontent.com/Shougo/neobundle.vim/master/bin/install.sh > install.sh
+     $ sh ./install.sh
+     ```
+Complete.
+
+#### If you want to install manually or you are using Windows.
+
+1. Setup NeoBundle:
+
+     ```
+     $ mkdir ~/.vim/bundle
+     $ git clone https://github.com/Shougo/neobundle.vim ~/.vim/bundle/neobundle.vim
+     ```
+
+2. Configure bundles:
+
+     Sample `.vimrc`:
+
+     ```vim
+     " Note: Skip initialization for vim-tiny or vim-small.
+     if 0 | endif
+
+     if &compatible
+       set nocompatible               " Be iMproved
+     endif
+
+     " Required:
+     set runtimepath+=~/.vim/bundle/neobundle.vim/
+
+     " Required:
+     call neobundle#begin(expand('~/.vim/bundle/'))
+
+     " Let NeoBundle manage NeoBundle
+     " Required:
+     NeoBundleFetch 'Shougo/neobundle.vim'
+
+     " My Bundles here:
+     " Refer to |:NeoBundle-examples|.
+     " Note: You don't set neobundle setting in .gvimrc!
+
+     call neobundle#end()
+
+     " Required:
+     filetype plugin indent on
+
+     " If there are uninstalled bundles found on startup,
+     " this will conveniently prompt you to install them.
+     NeoBundleCheck
+     ```
+
+### 2. Install configured bundles
+
+Launch `vim`, run `:NeoBundleInstall` or `:Unite neobundle/install` (required
+unite.vim) Or Command run `bin/neoinstall` or `vim +NeoBundleInstall +qall`
 
 
+## How to test
 
-![calendar.vim](https://raw.githubusercontent.com/wiki/itchyny/calendar.vim/image/frame.png)
+Run `make test` command in command line(required vim-themis).
 
-If you have a trouble like the above screenshot, add the following configuration to your vimrc.
+https://github.com/thinca/vim-themis
+
+
+## Advantages over Vundle
+
+1. Plugin prefixed command name (:Bundle vs :NeoBundle).
+2. Support for vimproc (asynchronous update/install).
+3. Support for unite.vim interface (update/install/search).
+4. Support for revision locking.
+5. Support for multiple version control systems (Subversion/Git).
+6. Support for lazy initialization for optimizing startup time.
+7. and so on...
+
+## Tips
+
+If you use a single .vimrc across systems where build programs are
+named differently (e.g. GNU Make is often `gmake` on non-GNU
+systems), the following pattern is useful:
+
 ```vim
-let g:calendar_frame = 'default'
+let g:make = 'gmake'
+if system('uname -o') =~ '^GNU/'
+        let g:make = 'make'
+endif
+NeoBundle 'Shougo/vimproc.vim', {'build': {'unix': g:make}}
 ```
-
-## Concept
-This is a calendar which is ...
-
-### Comfortable
-The key mappings are designed to match the default mappings of Vim.
-
-### Powerful
-The application can be connected to Google Calendar and used in your life.
-
-### Elegant
-The appearance is carefully designed, dropping any unnecessary information.
-
-### Interesting
-You can choose the calendar in Julian calendar or in Gregorian calendar.
-
-### Useful
-To conclude, very useful.
-
-## Author
-itchyny (https://github.com/itchyny)
-
-## License
-This software is released under the MIT License, see LICENSE.
-
-## Installation
-Install with your favorite plugin manager.
-
-## Google Calendar and Google Task
-In order to view and edit calendars on Google Calendar, or task on Google Task,
-add the following configurations to your vimrc file.
-```vim
-let g:calendar_google_calendar = 1
-let g:calendar_google_task = 1
-```
-It requires `wget` or `curl`.
-
-
-## Terms of Use
-Under no circumstances we are liable for any damages (including but not limited to damages for loss of business, loss of profits, interruption or the like) arising from use of this software.
-This software deals with your events and tasks.
-We are not liable for any circumstances; leakage of trade secrets due to the cache files of this software, loss of important events and tasks due to any kind of bugs and absence from important meetings due to any kind of failures of this software.
-This software downloads your events from Google Calendar, and your tasks from Google Task.
-DO NOT use this software with important events and tasks.
-This software downloads your events or tasks to the cache directory.
-Please be careful with the cache directory; DO NOT share the directory with any cloud storage softwares.
-This software also uploads your events and tasks to Google APIs.
-While it uses https, but DO NOT use this software for confidential matters.
-This software NEVER uploads your events and tasks to any other server except Google's.
-However, if `wget` or `curl` command are replaced with malicious softwares, your events or tasks can be uploaded to other sites.
-Please use the official softwares for the commands.
