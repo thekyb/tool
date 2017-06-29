@@ -299,6 +299,8 @@ NeoBundleFetch 'Shougo/neobundle.vim'
 NeoBundle 'https://github.com/Shougo/vimproc.vim.git'
 NeoBundle 'https://github.com/kien/ctrlp.vim.git'
 NeoBundle 'https://github.com/tpope/vim-fugitive.git'
+NeoBundle 'https://github.com/vim-airline/vim-airline.git'
+
 
 call neobundle#end()
 
