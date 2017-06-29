@@ -1,23 +1,162 @@
+""""""""""""""""""""""""""""""""""""""
+"            Appearance              "
+""""""""""""""""""""""""""""""""""""""
+colorscheme obsidian2
+set ruler laststatus=2 number title
+set cursorline 
+set nocursorcolumn
+map <C-F2> :set cursorcolumn!<CR>
+set titlestring=%f title    " Display filename in terminal window
+set rulerformat=%l:%c ruler " Display current column/line
+map <C-F3> :let &scrolloff=110-&scrolloff<CR>
+set scrolloff=100
+hi Folded guibg=#707070
+"...................................................................
+"Added in 2016. 9. 15 : to make cursor noticible
+">>>>...............................................................
+" set cursorcolumn 
+" hi CursorLine   cterm=NONE ctermbg=darkred ctermfg=white guibg=darkred guifg=white
+" hi CursorColumn cterm=NONE ctermbg=darkred ctermfg=white guibg=darkred guifg=white
+" highlight Cursor guifg=white guibg=orange
+" highlight iCursor guifg=white guibg=steelblue
+" hi MatchParen guibg=NONE guifg=#ff005f gui=bold
+" set guicursor=n-v-c:block-Cursor
+" set guicursor+=i:ver100-iCursor
+" set guicursor+=n-v-c:blinkon0
+" set guicursor+=i:blinkwait10
+"Added in 2016. 9. 15 : to make cursor noticible
+"<<<<...............................................................
+
+""""""""""""""""""""""""""""""""""""""
+"          Search & Replace          "
+""""""""""""""""""""""""""""""""""""""
+set hlsearch  
+set encoding=utf-8
+vnoremap // y/<C-R>"<CR>
+noremap <C-f> /
+noremap / /\c
+noremap <S-F> :%s/
+" copy file names
+nmap yf :let @* = expand("%")<CR>
+nmap yd :let @* = expand("%:p")<CR>
+
+""""""""""""""""""""""""""""""""""""""
+"           Movement                 "
+""""""""""""""""""""""""""""""""""""""
+nmap <S-Enter> O<Esc>j
+nmap <CR> i<CR><Esc>l
+nmap <Space><CR> o<Esc>k
+" Delete without yanking
+nnoremap d "_d
+vnoremap d "_d
+nnoremap c "_c
+" Delete with yanking
+nnoremap <S-d> dd
+"vnoremap p "_dP
+nnoremap x "_x
+
+""""""""""""""""""""""""""""""""""""""
+"           General Settings         "
+""""""""""""""""""""""""""""""""""""""
+syntax on
+" set norelativenumber
+syntax sync minlines=256
+set ttyfast
+set tabstop=4 shiftwidth=4 expandtab
+set smarttab                                                         " tab and backspace are smart " 
+
+"""""""""""""""""""""""""""""""""""""""
+"           Menu completions          "
+"""""""""""""""""""""""""""""""""""""""
+set wildmode=full wildmenu                            " Command-line tab completion
+set infercase                                         " AutoComplete in Vim
+set completeopt=longest,menu,menuone
+set wildignore+=*.o,*.obj,*.pyc,*.DS_STORE,*.db,*.swc
+
+
+"""""""""""""""""""""""""""""""""""""""
+"           GUI Stuff                 "
+"""""""""""""""""""""""""""""""""""""""
+set mousemodel=extend " Enable mouse support
+set selectmode=mouse
+set mousefocus
+set mouse=a
+set guioptions -=T
+
+"""""""""""""""""""""""""""""""""""""""
+"           Spelling                  "
+"""""""""""""""""""""""""""""""""""""""
+if v:version >= 700
+  setlocal spelllang=en
+  nmap <Space>ll :set spell!<CR>
+endif
+"   Correct some spelling mistakes    "
+ia teh      the
+ia htis     this
+ia tihs     this
+ia funciton function
+ia fucntion function
+ia funtion  function
+ia retunr   return
+ia reutrn   return
+ia sefl     self
+ia eslf     self
+
+"""""""""""""""""""""""""""""""""""""""
+"           backup options            "
+"""""""""""""""""""""""""""""""""""""""
+" set backupdir=~/tmp,/tmp " backups (~)
+" set directory=~/tmp,/tmp " swap files
+" set nowritebackup
+" set noswapfile
+"set guioptions -=m 
+
+set backup
+set backupdir   =$HOME/.vim/files/backup/
+set backupext   =-vimbackup
+set backupskip  =
+set directory   =$HOME/.vim/files/swap//
+set updatecount =100
+set undofile
+set undodir     =$HOME/.vim/files/undo/
+set viminfo     ='100,n$HOME/.vim/files/info/viminfo
+
+""""""""""""""""""""""""""""""""""""""
+"           NERDTree                 "
+""""""""""""""""""""""""""""""""""""""
+let NERDTreeShowHidden=1
+let NERDTreeShowBookmarks=1
+noremap <Space>e :NERDTree<CR>
+noremap <Space>E :NERDTree
+noremap <Space>t :FufFile<CR>
+
+""""""""""""""""""""""""""""""""""""""
+"           StartUp                  "
+""""""""""""""""""""""""""""""""""""""
+function! StartUp()
+    simalt ~x
+    " if 0 == argc()
+        NERDTree
+    " end
+endfunction
+
+autocmd VimEnter * call StartUp()
+
+"""""""""""""""""""""""""""""""""""""""
+"    Start Original Kyb Here          "
+"""""""""""""""""""""""""""""""""""""""
 " I Forgot what is this
 " map <C-I> <C-Y>
 source $VIMRUNTIME/vimrc_example.vim
 source $VIMRUNTIME/mswin.vim
-hi Folded guibg=#707070
 behave mswin
-set encoding=utf-8
 set gfn=Consolas:h10
-set cursorcolumn
-map <C-F2> :set cursorcolumn!<CR>
-set cursorline
 set statusline+=%F
-"set showcmd
 set fileencodings=utf-8,euckr
 set nocompatible
 map <C-F5> :set relativenumber!<CR>
 "set ignorecase
 set nowrap
-set ruler laststatus=2 number title hlsearch
-set hlsearch  
 set autoread
 set backspace=indent,eol,start
 
@@ -28,45 +167,8 @@ noremap zh :set foldlevel=0<CR>
 noremap zk zr
 noremap zj zm
 noremap zl :set foldlevel=10<CR>
-" copy file names
-nmap yf :let @* = expand("%")<CR>
-nmap yd :let @* = expand("%:p")<CR>
 
-"test here to 
-" noremap zh :set foldlevel=fildlevel-1<CR>
-" noremap zl zr
-" noremap zj :set foldlevel=1<CR>
-" map zk zm
-" noremap zl :set foldlevel=fildlevel+1<CR>
-" to here 
-"
-"
-"set foldopen=all
-"set foldclose=all
-colorscheme obsidian2
-"...................................................................
-syntax on
-set nocursorcolumn
-set nocursorline
-" set norelativenumber
-syntax sync minlines=256
-"...................................................................
-"Visual block find all
-vnoremap // y/<C-R>"<CR>
-
-map <C-F3> :let &scrolloff=110-&scrolloff<CR>
-set scrolloff=100
-"...................................................................
-"Added in 2016. 7. 20 : 
 map <F11> <Esc>:call libcallnr("gvimfullscreen.dll", "ToggleFullScreen", 0)<CR> 
-" Delete without yanking
-nnoremap d "_d
-vnoremap d "_d
-nnoremap c "_c
-" Delete with yanking
-nnoremap <S-d> dd
-"vnoremap p "_dP
-nnoremap x "_x
 autocmd! bufwritepost .vimrc source %
 set pastetoggle=<F2>
 set clipboard=unnamed
@@ -91,70 +193,21 @@ noremap <Space>c :Calendar<CR>
 noremap <C-Tab> :tabnext<CR>
 noremap <C-n> :tabe<CR>
 noremap <C-S-Tab> :tabprevious<CR>
-"Search & replace all
-noremap <C-f> /
-noremap / /\c
-noremap <S-F> :%s/
-nmap <S-Enter> O<Esc>j
-nmap <CR> i<CR><Esc>l
-nmap <Space><CR> o<Esc>k
 "Set indent control
 vnoremap < <gv
 vnoremap > >gv
 "Set t current windowindent control
 vnoremap y ygv<esc>
 vnoremap Y y
-set nobackup
-set nowritebackup
-set noswapfile
-"set guioptions -=m 
-set guioptions -=T
 
-"NERDTree"
-let NERDTreeShowHidden=1
-noremap <Space>e :NERDTree<CR>
-noremap <Space>E :NERDTree
-noremap <Space>t :FufFile<CR>
 
 "...................................................................
-function! StartUp()
-    simalt ~x
-    if 0 == argc()
-        NERDTree
-    end
-endfunction
-
-autocmd VimEnter * call StartUp()
-let NERDTreeShowBookmarks=1
-"...................................................................
-
-"...................................................................
-"Added in 2016. 6. 27 : to make a auto generated code for js and html 
-"Plugin 'pangloss/vim-javascript'
-"...................................................................
-"Added in 2016. 5. 16 : to make a view before close and re open that view
-"after it opens
+"Added in 2016. 5. 16 : to make a view before close and re open that view after it opens
 
     " autocmd BufWinLeave *.* mkview
     " autocmd BufWinEnter *.* silent loadview 
 "...................................................................
-set tabstop=4 shiftwidth=4 expandtab
 
-"...................................................................
-"Added in 2016. 9. 15 : to make cursor noticible
-"...................................................................
-" set cursorcolumn 
-" hi CursorLine   cterm=NONE ctermbg=darkred ctermfg=white guibg=darkred guifg=white
-" hi CursorColumn cterm=NONE ctermbg=darkred ctermfg=white guibg=darkred guifg=white
-" highlight Cursor guifg=white guibg=orange
-" highlight iCursor guifg=white guibg=steelblue
-" hi MatchParen guibg=NONE guifg=#ff005f gui=bold
-" set guicursor=n-v-c:block-Cursor
-" set guicursor+=i:ver100-iCursor
-" set guicursor+=n-v-c:blinkon0
-" set guicursor+=i:blinkwait10
-"Added in 2016. 9. 15 : to make cursor noticible
-"...................................................................
 "...................................................................
 "Added in 2016. 10. 26 : Matching Tag
 "...................................................................
