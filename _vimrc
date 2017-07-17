@@ -111,7 +111,7 @@ ia eslf     self
 " set noswapfile
 "set guioptions -=m 
 
-set backup
+set nobackup
 set backupdir   =$HOME/.vim/files/backup/
 set backupext   =-vimbackup
 set backupskip  =
@@ -128,6 +128,19 @@ let NERDTreeShowHidden=1
 let NERDTreeShowBookmarks=1
 noremap <Space>e :NERDTree<CR>
 noremap <Space>E :NERDTree
+
+""""""""""""""""""""""""""""""""""""""
+"           Airline                  "
+""""""""""""""""""""""""""""""""""""""
+let g:airline_left_sep='>'
+let NERDTreeShowHidden=1
+  let g:airline_detect_modified=1
+  let g:airline_detect_paste=1
+  let g:airline_detect_crypt=1
+  let g:airline_detect_spell=1
+  let g:airline_detect_iminsert=0
+  let g:airline_inactive_collapse=1
+  let g:airline_theme='dark'
 
 """"""""""""""""""""""""""""""""""""""
 "           CtrlP                    "
