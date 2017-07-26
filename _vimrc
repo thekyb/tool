@@ -55,6 +55,23 @@ nnoremap <S-d> dd
 "vnoremap p "_dP
 nnoremap x "_x
 
+"  Ê = Alt + Shift + j , Ë  = Alt + Shift + k
+nnoremap Ê :m .+1<CR>
+nnoremap Ë :m .-2<CR>
+inoremap Ê <Esc>:m .+1<CR>==gi
+inoremap Ë <Esc>:m .-2<CR>==gi
+vnoremap Ê :m '>+1<CR>gv=gv
+vnoremap Ë :m '<-2<CR>gv=gv
+map <C-j> <C-W><C-J>
+map <C-k> <C-W><C-K>
+map <C-l> <C-W><C-L>
+map <C-h> <C-W><C-H>
+
+"Page down and up :    'ê'= Alt + j   and  'ë' = Alt + k
+noremap ê 10j 
+noremap ë 10k
+"end Page down and up 
+
 """"""""""""""""""""""""""""""""""""""
 "           General Settings         "
 """"""""""""""""""""""""""""""""""""""
@@ -109,16 +126,31 @@ ia eslf     self
 " set directory=~/tmp,/tmp " swap files
 " set nowritebackup
 " set noswapfile
-"set guioptions -=m 
+" set guioptions -=m 
+ if !isdirectory($HOME.'/.vim/')
+     call mkdir($HOME.'/.vim/', "p")
+ endif
+if !isdirectory($HOME.'/.vim/files')
+    call mkdir($HOME.'/.vim/files', "p")
+endif
+if !isdirectory($HOME.'/.vim/files/backup')
+    call mkdir($HOME.'/.vim/files/backup', "p")
+endif
+if !isdirectory($HOME.'/.vim/files/swap')
+    call mkdir($HOME.'/.vim/files/swap', "p")
+endif
+if !isdirectory($HOME.'/.vim/files/undo')
+    call mkdir($HOME.'/.vim/files/undo', "p")
+endif
 
 set backup
 set backupdir   =$HOME/.vim/files/backup/
 set backupext   =-vimbackup
 set backupskip  =
-set directory   =$HOME/.vim/files/swap//
+set directory   =$HOME/.vim/files/swap/
 set updatecount =100
-set undofile
 set undodir     =$HOME/.vim/files/undo/
+set undofile
 set viminfo     ='100,n$HOME/.vim/files/info/viminfo
 
 """"""""""""""""""""""""""""""""""""""
@@ -214,15 +246,6 @@ vnoremap Y y
 filetype plugin on 
 "...................................................................
 
-map <C-J> <C-W><C-J>
-map <C-K> <C-W><C-K>
-map <C-L> <C-W><C-L>
-map <C-H> <C-W><C-H>
-
-"Page down and up :    'ê'= Alt + j   and  'ë' = Alt + k
-noremap ê 10j 
-noremap ë 10k
-"end Page down and up 
 
 set diffexpr=MyDiff()
 function MyDiff()
