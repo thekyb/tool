@@ -1,3 +1,6 @@
+source $VIMRUNTIME/vimrc_example.vim
+source $VIMRUNTIME/mswin.vim
+behave mswin
 """"""""""""""""""""""""""""""""""""""
 "            Appearance              "
 """"""""""""""""""""""""""""""""""""""
@@ -62,15 +65,15 @@ inoremap Ê <Esc>:m .+1<CR>==gi
 inoremap Ë <Esc>:m .-2<CR>==gi
 vnoremap Ê :m '>+1<CR>gv=gv
 vnoremap Ë :m '<-2<CR>gv=gv
-map <C-j> <C-W><C-J>
-map <C-k> <C-W><C-K>
-map <C-l> <C-W><C-L>
-map <C-h> <C-W><C-H>
 
 "Page down and up :    'ê'= Alt + j   and  'ë' = Alt + k
 noremap ê 10j 
 noremap ë 10k
 "end Page down and up 
+map <C-J> <C-W><C-J>
+map <C-K> <C-W><C-K>
+map <C-L> <C-W><C-L>
+map <C-H> <C-W><C-H>
 
 """"""""""""""""""""""""""""""""""""""
 "           General Settings         "
@@ -179,9 +182,6 @@ autocmd VimEnter * call StartUp()
 """""""""""""""""""""""""""""""""""""""
 " I Forgot what is this
 " map <C-I> <C-Y>
-source $VIMRUNTIME/vimrc_example.vim
-source $VIMRUNTIME/mswin.vim
-behave mswin
 set gfn=Consolas:h10
 set statusline+=%F
 set fileencodings=utf-8,euckr
@@ -297,4 +297,12 @@ fu! SeeTab()
 endfunc
 com! -nargs=0 SeeTab :call SeeTab()
 
-
+if has("multi_byte")
+  if &termencoding == ""
+    let &termencoding = &encoding
+  endif
+  set encoding=utf-8
+  setglobal fileencoding=utf-8
+  "setglobal bomb
+  set fileencodings=ucs-bom,utf-8,latin1
+endif
