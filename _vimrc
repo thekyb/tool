@@ -145,15 +145,15 @@ if !isdirectory('C:/jean/tool/files/undo')
     call mkdir('C:/jean/tool/files/undo', "p")
 endif
 
-set backup
-set backupdir   ='C:/jean/tool/files/backup/
+set backup 
+set backupdir   =C:/jean/tool/files/backup/
 set backupext   =-vimbackup
 set backupskip  =
-set directory   ='C:/jean/tool/files/swap/
+set directory   =C:/jean/tool/files/swap/
 set updatecount =100
-set undodir     ='C:/jean/tool/files/undo/
+set undodir     =C:/jean/tool/files/undo/
 set undofile
-set viminfo     ='100,n'C:/jean/tool/files/info/viminfo
+set viminfo     ='100,nC:/jean/tool/files/info/viminfo
 
 """"""""""""""""""""""""""""""""""""""
 "           NERDTree                 "
