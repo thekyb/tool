@@ -129,31 +129,31 @@ ia eslf     self
 " set nowritebackup
 " set noswapfile
 " set guioptions -=m 
- if !isdirectory($HOME.'/.vim/')
-     call mkdir($HOME.'/.vim/', "p")
+ if !isdirectory('C:/jean/tool/')
+     call mkdir('C:/jean/tool/', "p")
  endif
-if !isdirectory($HOME.'/.vim/files')
-    call mkdir($HOME.'/.vim/files', "p")
+if !isdirectory('C:/jean/tool/files')
+    call mkdir('C:/jean/tool/files', "p")
 endif
-if !isdirectory($HOME.'/.vim/files/backup')
-    call mkdir($HOME.'/.vim/files/backup', "p")
+if !isdirectory('C:/jean/tool/files/backup')
+    call mkdir('C:/jean/tool/files/backup', "p")
 endif
-if !isdirectory($HOME.'/.vim/files/swap')
-    call mkdir($HOME.'/.vim/files/swap', "p")
+if !isdirectory('C:/jean/tool/files/swap')
+    call mkdir('C:/jean/tool/files/swap', "p")
 endif
-if !isdirectory($HOME.'/.vim/files/undo')
-    call mkdir($HOME.'/.vim/files/undo', "p")
+if !isdirectory('C:/jean/tool/files/undo')
+    call mkdir('C:/jean/tool/files/undo', "p")
 endif
 
 set backup
-set backupdir   =$HOME/.vim/files/backup/
+set backupdir   ='C:/jean/tool/files/backup/
 set backupext   =-vimbackup
 set backupskip  =
-set directory   =$HOME/.vim/files/swap/
+set directory   ='C:/jean/tool/files/swap/
 set updatecount =100
-set undodir     =$HOME/.vim/files/undo/
+set undodir     ='C:/jean/tool/files/undo/
 set undofile
-set viminfo     ='100,n$HOME/.vim/files/info/viminfo
+set viminfo     ='100,n'C:/jean/tool/files/info/viminfo
 
 """"""""""""""""""""""""""""""""""""""
 "           NERDTree                 "

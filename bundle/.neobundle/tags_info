@@ -1,0 +1,5 @@
+ctrlp.vim
+neobundle.vim
+vim-airline
+vim-fugitive
+vimproc.vim
