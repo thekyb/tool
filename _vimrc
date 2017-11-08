@@ -45,6 +45,7 @@ set scrolloff=100
 set hlsearch  
 set encoding=utf-8
 vnoremap // y/<C-R>"<CR>
+vnoremap ? y:Dict <C-R>"<CR>
 noremap <C-f> /
 noremap / /\c
 noremap <S-F> :%s/
@@ -320,4 +321,5 @@ call plug#begin('vim80/plugged')
 Plug 'junegunn/vim-easy-align'
 " Initialize plugin system
 Plug 'scrooloose/nerdcommenter'
+Plug 'https://github.com/szw/vim-dict.git'
 call plug#end()
