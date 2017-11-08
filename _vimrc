@@ -45,7 +45,8 @@ set scrolloff=100
 set hlsearch  
 set encoding=utf-8
 vnoremap // y/<C-R>"<CR>
-vnoremap ? y:Dict <C-R>"<CR>
+vnoremap <Space>d y:Dict <C-R>"<CR>
+noremap <Space>d viwy:Dict <C-R>"<CR>
 noremap <C-f> /
 noremap / /\c
 noremap <S-F> :%s/
