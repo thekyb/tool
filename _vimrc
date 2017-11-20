@@ -188,7 +188,8 @@ set gfn=Consolas:h10
 set statusline+=%F
 set fileencodings=utf-8,euckr
 set nocompatible
-map <C-F5> :set relativenumber<CR>
+set relativenumber
+map <C-F5> :set relativenumber!<CR>
 "set ignorecase
 set nowrap
 set autoread
