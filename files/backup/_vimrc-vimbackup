@@ -45,8 +45,8 @@ set scrolloff=100
 set hlsearch  
 set encoding=utf-8
 vnoremap // y/<C-R>"<CR>
-vnoremap <Space>d y:Dict <C-R>"<CR>
-noremap <Space>d y:Dict <C-R>"<CR>
+vnoremap <Space>d y:Dict <C-R>"<CR><C-W>L
+noremap <Space>d viwy:Dict <C-R>"<CR><C-W>L
 noremap <C-f> /
 noremap / /\c
 noremap <S-F> :%s/
@@ -57,8 +57,9 @@ nmap yd :let @* = expand("%:p")<CR>
 """"""""""""""""""""""""""""""""""""""
 "           Movement                 "
 """"""""""""""""""""""""""""""""""""""
-nmap <S-Enter> O<Esc>j
-nmap <CR> i<CR><Esc>l
+
+nmap <S-Enter> a<CR><Esc>k$
+nmap <CR> i<CR><Esc>
 nmap <Space><CR> o<Esc>k
 " Delete without yanking
 nnoremap d "_d
@@ -168,6 +169,13 @@ noremap <Space>E :NERDTree
 noremap <Space>t :FufFile<CR>
 
 """"""""""""""""""""""""""""""""""""""
+"           Calendar                 "
+""""""""""""""""""""""""""""""""""""""
+noremap <Space>c :Calendar<CR>
+let g:calendar_google_calendar = 1
+let g:calendar_google_task = 1
+
+""""""""""""""""""""""""""""""""""""""
 "           StartUp                  "
 """"""""""""""""""""""""""""""""""""""
 function! StartUp()
@@ -188,7 +196,8 @@ set gfn=Consolas:h10
 set statusline+=%F
 set fileencodings=utf-8,euckr
 set nocompatible
-map <C-F5> :set relativenumber<CR>
+set relativenumber
+map <C-F5> :set relativenumber!<CR>
 "set ignorecase
 set nowrap
 set autoread
@@ -223,7 +232,6 @@ inoremap <S-Tab> <C-d>
 noremap <Space>q :q<CR>
 noremap <Space>Q :q!<CR>
 "Quick quit commadn
-noremap <Space>c :Calendar<CR>
 "next tabpage
 noremap <C-Tab> :tabnext<CR>
 noremap <C-n> :tabe<CR>

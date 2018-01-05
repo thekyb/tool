@@ -1,0 +1,47 @@
+MOMQA IP – 10.10.19.25      UN : Pronexus/administrator     PW: Pronexus123
+MoMAdmin web portal : http://10.10.19.25/MomAdmin/
+    UN : vocantas;
+    PW : vocantas;
+
+MOMServer -10.10.23.27      UN : vocantasonline\jean   
+DB Server 172.25.206.35     UN : sa                         PW: Vocantas2010
+
+Vocantas online   - 10.10.23.27      UN : vocantasonline\jean  
+MOM6     - 10.10.23.61      UN : vocantasonline\jean  
+MOM4     - 10.10.23.74      UN : vocantasonline\jean 
+MOM7 (Storage) - 10.10.23.91
+MOM8 Storage - 10.10.23.165
+DB for MOM4 - 10.10.23.20   UN : sa                         PW: Vocantas2013!
+
+
+A two machines kevin is using for the test: 
+10.10.23.187
+10.10.23.188
+
+use Scaller;
+select top (10000)* from PatientData
+where contactID = '40087812';
+<promptfile>%PATIENT_PROGRAM_WAVE%<promptfile>
+
+Prompt List:
+\\vcrm\VocantasCorporate\Project Management\WorldlyVoices-Gen\2017\WorldlyVoices_20170731_Humber.doc
+V:\Project Management\MOM\DataSheet Master List of Scripts - updated Winter 2016.xlsx
+....  like that
+
+\\vcrm\Vocantascorporate\Project Management\MOM\2017 Summer\Humber
+
+
+Production Site:https://209.217.109.13:8080/momadmin/ 
+https://vocantasonline.com/momadmin/
+Username: vocantas
+Password: CallOuts#3058!
+
+Humber College
+Web Interface: https://vocantasonline.com/humber/
+Administrator Role
+Username: humadmin
+Password: XLub@2015
+
+
+http://wiki.vocantas.com/doku.php?id=call_assure
+Under ASC QA there is a title "VBV 10.2 QA"

@@ -1,0 +1,65 @@
+;This is Pronexus ini file.
+;You shouldn't change anything here
+;unless absolutely necessary.
+;Changing the file may cause some
+;features to stop function properly.
+;Copyright (c) 1993-2006 PRONEXUS, Inc.
+
+[Layout]
+ShowTitles=1
+
+[VBVLog]
+showlstat=1
+name=master
+[Directories]
+Voice=C:\Program Files (x86)\Pronexus\VBVoice\
+Logs=C:\ProgramData\Pronexus\VBVoice\Logs\
+BinaryPath=C:\Program Files (x86)\Pronexus\bin\
+Announce=C:\Program Files (x86)\Pronexus\
+[System]
+logs=1
+linestat=C:\Program Files (x86)\Pronexus\bin\vbvrlog.exe
+UseVBVLog=1
+[VoiceCard]
+UseAlaw=0
+Type=Simulator
+[Voip] 
+RegProtocol=SIP 
+RegServerIP=h31.univoip.ca 
+RegEndPointIP=512@h31.univoip.ca 
+RegTerminalAlias=512@10.207.241.64 
+RegTimeToLive=90 
+SipAuthenticationRealm=asterisk 
+SipAuthenticationUsername=512 
+SipAuthenticationPassword=UKbdask78d6asgd 
+[VoiceCard] 
+UseAlaw=0 
+Type=DialogicHMP 
+[Mrcp] 
+SessionExpires=240 
+TTSResponseTimeout=4000 
+ClientContactPort=5060 
+TtsServerAddress=10.10.19.26 
+TtsServersAddresses=10.207.241.95:5080,10.10.19.26:5080 
+TtsServerPort=5080 
+AsrServerAddress=10.10.19.26 
+AsrServersAddresses=10.207.241.95:5080,10.10.19.26:5080 
+AsrServerPort=5080 
+RunningV2=1 
+ASRServerPortIsTCP=0 
+TTSServerPortIsTCP=0 
+UniMrcpRootDirectory=C:\Program Files (x86)\Pronexus\MRCPClientV2 
+UniMRcpProfilePath=C:\Program Files (x86)\Pronexus\MRCPClientV2\conf\client-profiles\lumenvox.xml 
+[Asr] 
+EngineType=MRCP 
+NumberOfEngines=50 
+[Tts] 
+NumberOfEngines=50 
+EngineType=MRCP 
+AllocEnginePerCall=0 
+[Rtm] 
+Host=192.168.1.121 
+[Diagnosticlogs] 
+VBVoiceLogLevel=5 
+DialogicLogLevel=5 
+DataServerLogLevel=5 

@@ -1,0 +1,355 @@
+from math import *
+from PIL import Image
+import glob, os
+from os import listdir
+from os.path import isfile, join
+
+TRIMSIZE = 54  # this size came from 2048* 5% /2 
+TRIMRESIZE = 5  # this size came from 2048* 5% /2 
+
+def secondAlgorism():
+    mypath = ("./5percent/")
+    onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
+    im1 = Image.new('RGB', (0,0))
+    im2 = Image
+    imNow = Image
+    f = 0
+    for i in onlyfiles:
+        f = f+1    
+        imNow = resizeImgByName(mypath+i, 1, 1)
+
+        if (f==1):
+            print(f)
+            im2 = imNow
+        elif f==len(onlyfiles):
+            print(f)
+            im1 = merge2(im1, im2, imNow)
+            imNow = resizeImg(imNow, 1/10, 1)
+
+            merge(im1, imNow).save("result.jpg", "JPEG")
+        else:
+            print(f)
+            imNow = resizeImgByName(mypath+i, 1, 1)
+            im1 = merge2(im1, im2, imNow)
+            im2 = imNow
+
+def firstAlgorism(name, widthRatio, heigthRatio):
+    mypath = ("./5percent/")
+    onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
+
+    for i in onlyfiles:
+        print(mypath+i)
+        im1 = Image.open("result.jpeg")
+        im2=resizeImgByName(mypath+i, 1/10, 1, -0.16)
+        merge(im1,im2).save("result.jpeg","JPEG")
+
+def resizeImgByName(name, widthRatio, heigthRatio):
+    result = Image.open(name)
+    im = Image.new('RGB', (result.width, result.height))
+    im.paste(im=result, box=(0, 0))
+    return im.resize((int(im.width* widthRatio),im.height), Image.ANTIALIAS)
+def resizeImg(im, widthRatio, heigthRatio):
+    result = Image.new('RGB', (im.width, im.height))
+    result.paste(im, (0, 0))
+    return result.resize((int(im.width* widthRatio),im.height), Image.ANTIALIAS)
+
+def resizeImg2(name, widthRatio, heigthRatio, ang):
+    result = Image.open(name)
+    result = result.rotate(ang)
+    im = Image.new('RGB', (result.width, result.height))
+    im.paste(im=result, box=(0, 0))
+    return im.resize((int(im.width* 1/10),im.height), Image.ANTIALIAS)
+
+def tiltRightPart(im, ang):
+    im = im.rotate(ang)
+    result = Image.new('RGB', (im.width, im.height))
+    result.paste(im=im, box=(0, -(int(tan(radians(ang))*im.width/2))))
+    return result
+
+def merge(im1, im2):
+    aixlist = []
+    difflist = []
+    for x in range(10):
+        for j in range(60):
+            aix = [] 
+            y = j+21
+            aix.append(x+1)
+            aix.append(y)
+            aix.append(0.1)
+            difflist.append(compare(im1,im2, x, y))
+            aixlist.append(aix)
+
+    pos = difflist.index(min(difflist))
+     
+    im2 = moveimage(im2, -aixlist[pos][0], + TRIMSIZE-aixlist[pos][1], aixlist[pos][2])
+    # im2.save("test.jpg","JPEG")
+
+    return statchImages(im1, im2)
+
+def merge2(im1, im2, im3):
+    aixlist = []
+    difflist = []
+    for x in range(20):
+        for j in range(30):
+            ang= -float(j)/100
+            aix = [] 
+            aix.append(x+1)
+            aix.append(TRIMSIZE)
+            aix.append(ang)
+            difflist.append(compareWithAngle(im2,im3, x, TRIMSIZE, ang))
+            aixlist.append(aix)
+    pos = difflist.index(min(difflist))
+     
+    im2 = moveimage2(im2, -aixlist[pos][0], 0, aixlist[pos][2])
+    im2 = resizeImg(im2, 1/10, 1)
+    im2.save("test.jpg","JPEG")
+
+    return statchImages(im1, im2)
+
+def getCompareRGBList(im, xposition, yposition):
+    rgb = []
+    for i in range(im.height - 310 -TRIMSIZE):
+        rgb.append([])
+        rgb[i].append(im.getpixel((xposition, i+yposition)))
+        
+    return rgb
+
+def getCompareRGBListWithRange(im, xposition, yposition, _range):
+    rgb = []
+    for i in range(_range):
+        rgb.append([])
+        rgb[i].append(im.getpixel((xposition, i+yposition)))
+        
+    return rgb
+def compareList(rgbA, rgbB):
+    fullResult = 0
+    for i in range(len(rgbA)-10):
+        a = 0
+        b = 0
+        for j in range(10):
+            rlistA = rgbA[i+j][0]
+            a += rlistA[0]+rlistA[1]+rlistA[2]
+            rlistB = rgbB[i+j][0]
+            b += rlistB[0]+rlistB[1]+rlistB[2]
+
+        diff = abs(a-b);
+        if (diff> 1000):
+            # print("it is too different")
+            # print(rlistA[0],rlistA[1],rlistA[2], rlistB[0],rlistB[1],rlistB[2])
+            # print(i, j)
+            fullResult +=10000
+        else:
+            fullResult += diff
+
+    return fullResult
+
+def compare(im1, im2, x, y):
+# from the image im1, deside the first comparison part 
+# from the image im2, deside the starting point as x,y values
+    rgbListA = getCompareRGBList(im1, im1.width-TRIMRESIZE, TRIMSIZE)
+    rgbListB = getCompareRGBList(im2, x, y)
+    return compareList(rgbListA, rgbListB)
+
+def compareWithAngle(a, b, x, y, ang):
+# WATCH_OUT : you should be careful for using compareWithAngle() method. the ang parameter is not for the second parameter but the first parameter
+    a = tiltRightPart(a,ang)
+    return compare(a, b, x, y)
+
+
+def moveimage(im, x, y, ang):
+    im = im.rotate(ang)
+    result = Image.new('RGB', (im.width -abs(x), im.height))
+    result.paste(im, (x,y))
+    return result
+
+def moveimage2(im, x, y, ang):
+    im = tiltRightPart(im, ang)
+    result = Image.new('RGB', (im.width -abs(x), im.height))
+    result.paste(im, (x,y))
+    return result
+def statchImages(im1, im2):
+    result_width = im1.width-TRIMRESIZE + im2.width
+    result_height = max(im1.height, im2.height)
+
+    result = Image.new('RGB', (result_width, result_height))
+    result.paste(im=im1, box=(0, 0))
+    result.paste(im=im2, box=(im1.width-TRIMRESIZE, 0))
+    return result
+
+def statchImages2(im1, im1xEnd, im2, im2xStart):
+    (width1, height1) = im1.size
+    (width2, height2) = im2.size
+    result_width = im1xEnd + width2 - im2xStart
+    # print (result_width)
+    result_height = max(height1, height2)
+
+    #r, g, b = rgb_im.g# check the line of first page starting width-10 10 
+
+    result = Image.new('RGB', (result_width, result_height))
+    im1Res = Image.new('RGB', (im1xEnd, result_height))
+    im1Res.paste(im=im1, box=(0, 0))
+
+    result.paste(im=im1Res, box=(0, 0))
+    result.paste(im=im2, box=(im1xEnd, 0))
+    return result
+
+
+def stitchTwo(a, b):
+    result = Image.open(a)
+    im1 = Image.new('RGB', (result.width, result.height))
+    im1.paste(im=result, box=(0, 0))
+    result = Image.open(b)
+    im2 = Image.new('RGB', (result.width, result.height))
+    im2.paste(im=result, box=(0, 0))
+    im2 = im2.rotate(-0.13)
+
+    arraydiff = []
+    for i in range(100):
+        rgbA = getCompareRGBList(im1, im1.width-54,50)
+        rgbB = getCompareRGBList(im2, 54,i)
+        diff = compareList(rgbA, rgbB);
+        arraydiff.append(diff)
+
+    pos = arraydiff.index(min(arraydiff))
+
+    im2.paste(im=result, box=(0, 50-pos))
+
+    res = statchImages2(im1, im1.width-54, im2, 54)
+    res.save("result2.bmp")
+    res.close()
+ 
+def arangeBottomLine():
+    mypath = ("./5percent/")
+    mypath2 = ("./5percent2/")
+    onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
+    imBase = resizeImgByName(mypath+onlyfiles[0], 1, 1)
+    baseRGB = getCompareRGBListWithRange(imBase, 0, 1200, 130)
+    for i in onlyfiles:
+        imNow = resizeImgByName(mypath+i, 1, 1)
+        difflist = []
+        
+        for j in range(100):
+
+            RGBNow = getCompareRGBListWithRange(imNow, 20, 1200-j, 130)
+            difflist.append(compareList(baseRGB,RGBNow))
+
+
+        pos = difflist.index(min(difflist))
+        print(pos)
+        im = Image.new('RGB', (imNow.width, imNow.height))
+        im.paste(im=imNow, box=(0, pos))
+        imNow.close()
+        im.save(mypath2+i, "JPEG")
+
+
+
+
+#=========functions using differencial values==========================================
+def compareDifferencialList(diffListA, diffListB):
+    fullResult = 0
+    for i in range(len(diffListA)-10):
+        a = 0
+        b = 0
+        for j in range(10):
+            listA = diffListA[i+j]
+            a += listA
+            listB = diffListB[i+j]
+            b += listB
+
+        diff = abs(a-b);
+        print(diff)
+        if (diff> 1000):
+            # print("it is too different")
+            # print(rlistA[0],rlistA[1],rlistA[2], rlistB[0],rlistB[1],rlistB[2])
+            # print(i, j)
+            fullResult +=10000
+        else:
+            fullResult += diff
+
+    return fullResult
+
+def getCompareDiffListWithRange(im, xposition, yposition, _range):
+    diffList = []
+    for i in range(_range-1):
+        rgb = im.getpixel((xposition, i+yposition))
+        rgb2 = im.getpixel((xposition, i+1+yposition))
+        diffList.append(rgb[0]+rgb[1]+rgb[2] - rgb2[0]-rgb2[1]-rgb2[2])
+    return diffList
+
+
+def arangeBottomLineByDifferencial():
+    mypath = ("./5percent/")
+    onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
+    imBase = resizeImgByName(mypath+onlyfiles[0], 1, 1)
+    baseDiff = getCompareDiffListWithRange(imBase, 0, 1200, 130)
+    for i in onlyfiles:
+        imNow = resizeImgByName(mypath+i, 1, 1)
+        difflist = []
+        
+        for j in range(100):
+
+            diffNow = getCompareDiffListWithRange(imNow, 0, 1200-j, 130)
+            difflist.append(compareDifferencialList(baseDiff,diffNow))
+
+
+        pos = difflist.index(min(difflist))
+        print(pos)
+        im = Image.new('RGB', (imNow.width, imNow.height))
+        im.paste(im=imNow, box=(0, pos))
+        imNow.close()
+        im.save(mypath+i, "JPEG")
+
+# mypath = ("./5percent/")
+# onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
+# # print(onlyfiles)
+# for i in onlyfiles:
+#     stitchTwo("result2.bmp", mypath+i)
+# # im2 = im2.rotate(0.13)
+
+# (width1, height1) = im1.size
+# (width2, height2) = im2.size
+
+
+# print(im2.size[1] - 100)
+
+# rgbA = []
+# # for i in range(5):
+# for i in range(im1.size[1] - 100):
+#     rgbA.append([])
+#     rgbA[i].append(im1.getpixel((im1.width-10, i+100)))
+# # rgbA[i].append("a")
+# rgbB = getCompareRGBList(im1, im1.width-10)
+
+# print(rgbB)
+
+# print(rgbA)
+
+
+
+       # first page rgb compare set(
+# result.paste(im=im2, box=(width1, 0))
+# result.show()
+
+
+# size = 128, 128
+
+# for infile in glob.glob("*.jpg"):
+#     file, ext = os.path.splitext(infile)
+#     im = Image.open(infile)
+#     im.thumbnail(size)
+#     im.save(file + ".thumbnail", "JPEG")
+
+
+#   image1 = Image.open(file1)
+#     image2 = Image.open(file2)
+
+#     (width1, height1) = image1.size
+#     (width2, height2) = image2.size
+
+#     result_width = width1 + width2
+#     result_height = max(height1, height2)
+
+#     result = Image.new('RGB', (result_width, result_height))
+#     result.paste(im=image1, box=(0, 0))
+#     result.paste(im=image2, box=(width1, 0))
+#     return result
