@@ -3,7 +3,7 @@ MoMAdmin web portal : http://10.10.19.25/MomAdmin/
     UN : vocantas;
     PW : vocantas;
 
-MOMServer -10.10.23.27      UN : vocantasonline\jean   
+MOMServer 10.10.23.27      UN : vocantasonline\jean   
 DB Server 172.25.206.35     UN : sa                         PW: Vocantas2010
 
 Vocantas online   - 10.10.23.27      UN : vocantasonline\jean  
@@ -31,7 +31,8 @@ V:\Project Management\MOM\DataSheet Master List of Scripts - updated Winter 2016
 \\vcrm\Vocantascorporate\Project Management\MOM\2017 Summer\Humber
 
 
-Production Site:https://209.217.109.13:8080/momadmin/ 
+Production Site:
+https://209.217.109.13:8080/momadmin/ 
 https://vocantasonline.com/momadmin/
 Username: vocantas
 Password: CallOuts#3058!
@@ -42,6 +43,36 @@ Administrator Role
 Username: humadmin
 Password: XLub@2015
 
+ASC_Settings: // the documents are here \\vcrm\Vocantascorporate\Project Management\ASC-Project-Master-Documents\ASC-Diagrams-2017
+Database Server : 10.10.23.68 / VocASC07
 
-http://wiki.vocantas.com/doku.php?id=call_assure
+: should login into vocantasonline vpn
+http://wiki.vocantas.com/doku.php?id=call_assure#asc_qa
 Under ASC QA there is a title "VBV 10.2 QA"
+
+
+
+Google sheet https://www.google.com/sheets/about/
+UN: vocantasqa@gmail.com
+pw: v0canta5_QA@2018_!
+
+Web Interface-Production
+Employee Portal: https://shiftsqa.vocantasonline.com
+Scheduler Portal: https://ascqa.vocantasonline.com
+?? http://10.10.23.127/MomAdmin] 
+update employee portal:
+source : \\vcrm\VocantasBuilds\ASC\version\EmployeePortal\EmployeePortal
+target : \\10.10.23.127\c$\Vocantas\ASC\EmployeePortal
+< except web.config, \\vcrm\VocantasBuilds\ASC\2.3.0.383\EmployeePortal\EmployeePortal\App_Themes\General\Images >
+update sehedule portal :
+source : \\vcrm\VocantasBuilds\ASC\2.3.0.383\SchedulerPortal\SchedulerPortal
+target : \\10.10.23.127\c$\Vocantas\ASC\SchedulerPortal
+< except web.config, \\vcrm\VocantasBuilds\ASC\2.3.0.383\SchedulerPortal\SchedulerPortal\App_Themes\Global\Images, Application Data>
+
+license
+http://prodcenter.dialogic.com/maint/download_trial.aspx?product=HMP30W
+
+
+
+
+

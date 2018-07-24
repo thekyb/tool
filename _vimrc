@@ -10,6 +10,15 @@ syntax sync minlines=256
 set ttyfast
 set tabstop=4 shiftwidth=4 expandtab
 set smarttab                                                         " tab and backspace are smart " 
+nnoremap <C-Space> <Esc>l
+inoremap <C-Space> <Esc>l
+vnoremap <C-Space> <Esc>l
+
+""""""""""""""""""""""""""""""""""""""
+"          temperal                  "
+""""""""""""""""""""""""""""""""""""""
+nmap <Space>p <Space>syd:!<C-v><CR><CR>
+
 """"""""""""""""""""""""""""""""""""""
 "            Appearance              "
 """"""""""""""""""""""""""""""""""""""
@@ -21,8 +30,8 @@ set nocursorcolumn
 map <C-F2> :set cursorcolumn!<CR>
 set titlestring=%f title    " Display filename in terminal window
 set rulerformat=%l:%c ruler " Display current column/line
-map <C-F3> :let &scrolloff=110-&scrolloff<CR>
-set scrolloff=100
+" map <C-F3> :let &scrolloff=110-&scrolloff!<CR>
+set scrolloff=20  "or set so=20
 "...................................................................
     "Added in 2016. 9. 15 : to make cursor noticible
 ">>>>...............................................................
@@ -47,12 +56,14 @@ set encoding=utf-8
 vnoremap // y/<C-R>"<CR>
 vnoremap <Space>d y:Dict <C-R>"<CR><C-W>L
 noremap <Space>d viwy:Dict <C-R>"<CR><C-W>L
+noremap <Space>r :reg<CR>
 noremap <C-f> /
 noremap / /\c
 noremap <S-F> :%s/
 " copy file names
 nmap yf :let @* = expand("%")<CR>
 nmap yd :let @* = expand("%:p")<CR>
+nmap yD :let @* = expand('%:p:h')<CR>
 
 """"""""""""""""""""""""""""""""""""""
 "           Movement                 "
@@ -81,12 +92,19 @@ vnoremap Ë :m '<-2<CR>gv=gv
 "Page down and up :    'ê'= Alt + j   and  'ë' = Alt + k
 noremap ê 10j 
 noremap ë 10k
+noremap ì 20l
+noremap <down> 10j 
+noremap <up> 10k
+noremap <left> 20l
 "end Page down and up 
+map <C-J> <C-W><C-J>
+inoremap <C-J> <Esc>
 map <C-J> <C-W><C-J>
 map <C-K> <C-W><C-K>
 map <C-L> <C-W><C-L>
 map <C-H> <C-W><C-H>
 
+nmap <Tab> i<Tab><esc>l
 
 """""""""""""""""""""""""""""""""""""""
 "           Menu completions          "
@@ -174,6 +192,16 @@ noremap <Space>t :FufFile<CR>
 noremap <Space>c :Calendar<CR>
 let g:calendar_google_calendar = 1
 let g:calendar_google_task = 1
+let g:calendar_time_zone = "{[-]0500}"
+
+""""""""""""""""""""""""""""""""""""""
+"           dbext                    "
+""""""""""""""""""""""""""""""""""""""
+vnoremap <F5> :DBExecVisualSQL<CR>
+vnoremap <unique> <Leader>se <Plug>DBExecVisualSQL
+
+let g:dbext_default_profile_SQLSRV        = 'type=SQLSRV:user=sa:passwd=Vocantas2013!:host=10.10.23.20'
+" let g:dbext_default_profile_mySQLServer  = 'type=SQLSRV:integratedlogin=1:srvname=mySrv:dbname=myDB'
 
 """"""""""""""""""""""""""""""""""""""
 "           StartUp                  "
@@ -205,6 +233,7 @@ set backspace=indent,eol,start
 
 " make a folding based on tab.
 " set foldmethod=indent
+" set foldexpr=strlen(substitute(substitute(getline(v:lnum),'\\s','',\"g\"),'[^>].*','',''))
 set foldlevel=7
 hi Folded guibg=#508080
 noremap zh :set foldlevel=0<CR>
@@ -229,9 +258,19 @@ noremap <Space>s :w<CR>
 vnoremap <Space>s <C-C>:w<CR>
 "Tab backword in insertmode
 inoremap <S-Tab> <C-d>
+inoremap <C-j> <esc>l
+vnoremap <C-j> <esc>l
 noremap <Space>q :q<CR>
 noremap <Space>Q :q!<CR>
 "Quick quit commadn
+noremap <Space>c :Calendar<CR>
+"Quick fold commadn
+noremap <Space>f va{zf
+augroup AutoSaveFolds
+  autocmd!
+  autocmd BufWinLeave * silent mkview
+  autocmd BufWinEnter * silent loadview
+augroup END
 "next tabpage
 noremap <C-Tab> :tabnext<CR>
 noremap <C-n> :tabe<CR>
@@ -255,6 +294,7 @@ vnoremap Y y
 "Added in 2016. 10. 26 : Matching Tag
 "...................................................................
 filetype plugin on 
+autocmd FileType c,cpp,cs,java setlocal commentstring=//\ %s
 "...................................................................
 
 
@@ -329,6 +369,8 @@ call plug#begin('vim80/plugged')
 " Shorthand notation; fetches https://github.com/junegunn/vim-easy-align
 Plug 'junegunn/vim-easy-align'
 " Initialize plugin system
-Plug 'scrooloose/nerdcommenter'
+" Plug 'scrooloose/nerdcommenter'
 Plug 'https://github.com/szw/vim-dict.git'
+Plug 'https://github.com/vim-scripts/dbext.vim.git'
+Plug 'https://github.com/tpope/vim-commentary.git'
 call plug#end()
