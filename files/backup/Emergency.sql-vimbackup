@@ -1,0 +1,21 @@
+use Scaller_JK
+
+select * from INFORMATION_SCHEMA.TABLES;
+select * from client
+select * from Units;
+
+
+select Top(10)* from callqueue order by idCallQueue desc;
+
+update callqueue set System = 'OSCAR-DT' where idCallQueue = 179382;
+
+--delete from callqueue where Status = 'Queued' and idCallQueue != 179380;
+
+                        2016-10-11 11:42:24.000	MOM-QA1	1099	6136561802	2016-10-11 11:42:24.000	2016-10-11 11:42:24.000	True	False	0	0	NULL	scShift_02	rlShift_02	3053	4103	Done	Answered	ESPManager	55573
+					178462	2018-01-09 09:57:39.207	CallAssure	RP0001048/17	16476490769	2018-01-09 00:00:00.000	2017-09-26 00:00:00.000	False	False	0	0	NULL	Providence_PD_48h_Script	Providence_48h_Rule	3072	5130	Queued	None	AutoImport	NULL
+						      2018-07-27 14:58:00.000	OSCAR-DT	test	16136566672	2018-07-27 00:00:00.000	2018-07-27 00:00:00.000	True	False	0	0	NULL	Stay-Away_Emergency	StayAwayEmergency_Rule	19	6163	Done	Answered	vocantas	NULL
+                                	OSCAR-DT	test	16136566672	                          2018-07-27 00:00:00.000	2018-07-27 00:00:00.000	True	False	0	0	NULL		ComeInEmergency_Rule	19	6164	Done	Answered	vocantas	NULL
+                                    179420		OSCAR-DT	test		2018-07-30 10:22:23.000
+insert into callqueue values('2018-07-30 10:21:23.000', 'OSCAR-DT', 'test', '16136566672','2018-07-30 00:00:00.000','2018-07-30 10:22:23.000', 'True', 'False', 0, 0, NULL, 'Come-In_Emergency', 'ComeInEmergency_Rule', 19, 6164, 'Queued', 'None', 'vocantas', NULL);
+insert into callqueue values('2018-07-27 16:14:00.000', 'OSCAR-DT', 'test', '16136566672','2018-07-27 00:00:00.000','2018-07-27 00:00:00.000', 'True', 'False', 0, 0, NULL, 'QCH_Script', 'QCH_rule1', 2, 1, 'Queued', 'None', 'vocantas', NULL);
+insert into callqueue values('2017-10-27 11:27:00.000', 'MOM8', 'test', '13434885073', '2017-10-27 00:00:00.000', '2017-10-27 00:00:00.000', 'True', 'False', 0, 0, 'QCH_Script', 'QCH_rule1', 2, 1, 'Queued', 'None', 'vocantas', NULL, NULL);

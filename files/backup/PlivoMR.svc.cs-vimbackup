@@ -1,0 +1,122 @@
+﻿using log4net;
+using System;
+using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.IO;
+using System.Linq;
+using System.Runtime.Serialization;
+using System.ServiceModel;
+using System.ServiceModel.Web;
+using System.Text;
+using System.Web;
+using System.Web.Script.Services;
+using VocLib;
+
+namespace PlivoMR
+{
+    public struct smsMsg
+    {
+        public string from;
+        public string to;
+        public string text;
+    }
+
+    // NOTE: You can use the "Rename" command on the "Refactor" menu to change the class name "PlivoMR" in code, svc and config file together.
+    // NOTE: In order to launch WCF Test Client for testing this service, please select PlivoMR.svc or PlivoMR.svc.cs at the Solution Explorer and start debugging.
+    public class PlivoMR : IServices
+    {
+        private static readonly ILog log = LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
+        DatabaseAccess PlivoDBGetMessage = new DatabaseAccess("PlivoMessage", log);
+        DatabaseAccess dbGetMessage = new DatabaseAccess("CallM.SMS", log);
+        Queue<smsMsg> msgList = new Queue<smsMsg>();
+
+        public Member GetData(string name)
+        {
+            Member member = new Member();
+            member.name = name;
+            member.age = 25;
+            log.Error("The message has been done");
+            return member;
+        }
+
+        public CompositeType GetDataUsingDataContract(CompositeType composite)
+        {
+            if (composite == null)
+            {
+                throw new ArgumentNullException("composite");
+            }
+            if (composite.BoolValue)
+            {
+                composite.StringValue += "Suffix";
+            }
+            return composite;
+        }
+        // Insert TODO: Add your service operations here
+        
+        
+
+        public void rsv_msg(Stream body)
+        {
+            StreamReader reader = new StreamReader(body);
+            string text = reader.ReadToEnd();
+            NameValueCollection coll = HttpUtility.ParseQueryString(text);
+
+            try
+            {
+                // Sender's phone numer
+
+                string ret = "Received Date : " + coll.Get("To") + " " + coll.Get("From") + " " + coll.Get("TotalRate") + " " + coll.Get("Units") + " " + coll.Get("Text") + " " + coll.Get("MessageUUID");
+                log.Info(ret);
+                string tSQL = "Insert into SMSQueueIn (ProviderID, InsertTime, ReceivedDate, SMSNumber, Message, Status, LastUpdated) values ({0}, '{1}', '{2}', '{3}', '{4}', '{5}', '{6}');";
+                string tProviderID = coll.Get("To");
+                string tInsertTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
+                string tReceivedDate = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
+                string tSMSNumber = coll.Get("From");
+                string tMessage = coll.Get("Text");
+                string tStatus = "Received";
+                string tLastUpdated = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
+
+                string.Format(tSQL, tProviderID, tInsertTime, tReceivedDate, tSMSNumber, tMessage, tStatus, tLastUpdated);
+                log.Info("tSQL is : " + tSQL);
+                dbGetMessage.ExecuteSQL(tSQL);
+                log.Info("after calling dbexecuter rsv_msg");
+            }
+            catch (Exception ex)
+            {
+                log.Error("Error on rsv_msg.", ex);
+            }
+        }
+
+        public void rsv_msg2(Stream body)
+        {
+            StreamReader reader = new StreamReader(body);
+            string text = reader.ReadToEnd();
+            NameValueCollection coll = HttpUtility.ParseQueryString(text);
+
+            try
+            {
+                // Sender's phone numer
+
+                string ret = "Received Date : " + coll.Get("To") + " " + coll.Get("From") + " " + coll.Get("TotalRate") + " " + coll.Get("Units") + " " + coll.Get("Text") + " " + coll.Get("MessageUUID");
+                log.Info(ret);
+                string sql = @"INSERT INTO PlivoMsg VALUES(@MsgTo, @MsgFrom, @InsertTime, @TotalRate, @Units, @MsgText, @TotalAmount, @MsgType, @MsgUUID, 0)";
+                PlivoDBGetMessage.ExecuteSQL(sql,
+                        new[] { "@MsgTo", "@MsgFrom", "@InsertTime", "@TotalRate", "@Units", "@MsgText", "@TotalAmount", "@MsgType", "@MsgUUID"},
+                        new object[] { coll.Get("To"), coll.Get("From"), DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff"), coll.Get("TotalRate"), coll.Get("Units"), coll.Get("Text"), coll.Get("TotalAmount"), coll.Get("Type"), coll.Get("MessageUUID")});
+
+                log.Info("after calling dbexecuter rsv_msg2");
+
+            }
+            catch (Exception ex)
+            {
+                log.Error("Error on rsv_msg2.", ex);
+            }
+
+        }
+
+        public void popMsg()
+        {
+            log.Info("I got message ??: ");
+        }
+    }
+}

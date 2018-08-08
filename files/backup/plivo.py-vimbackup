@@ -1,0 +1,94 @@
+https://www.plivo.com/docs/getting-started/send-a-single-sms/
+
+
+1-587-812-4227 
+15878124227 
+
+
+
+https://console.plivo.com/phone-numbers/logs/
+
+https://plivotest.vocantasonline.com/receive_msg.asmx/rsv_msg
+https://plivotest.vocantasonline.com/PlivoMr.svc/rsv_msg
+https://plivotest.vocantasonline.com/PlivoMr.svc/rsv_msg2
+
+json
+{"To": "15878124157", "From": "16137968271", "TotalRate": "0", "Units": "1", "Text": "Tttttttt", "TotalAmount": "0", "Type": "sms", "MessageUUID": "7b5f4c16-7a31-11e8-b54c-069c4de7c8c0"} -- failure- 500 h
+ {'To': '15878124157', 'From': '16137968271', 'TotalRate': '0', 'Units': '1', 'Text': 'Hdkhdkgdkgd', 'TotalAmount': '0', 'Type': 'sms', 'MessageUUID': 'b6b82d76-7ad8-11e8-a762-0617fd959094'} 
+
+application/x-www-form-urlencoded
+To=15878124157&From=16137968271&TotalRate=0&Units=1&Text=test2&TotalAmount=0&Type=sms&MessageUUID=1e860ba8-7ec6-11e8-8624-0257735f0d96
+
+
+WebHook test
+ http://webhook.site/#/7bc7d2ab-aca6-4835-9ff2-7e73e9af49d0/eb07ba1c-a15a-4871-b77a-f51999f4454a/0     
+
+
+Insomnia
+
+Postman
+https://www.getpostman.com/
+
+
+
+
+
+
+
+====== SMS - Plivo ======
+
+**https**://www.plivo.com/\\
+**User**: jean.ko@pronexus.com\\
+**Password**: Vocantas2018!\\
+
+**Account information :\\
+**https**://console.plivo.com/dashboard/\\
+**The phone number for SMS**: \\
+1587-812-4157, \\
+<del>1587-812-4227</del>\\
+<del>1343-882-5789</del>\\
+**ID**: MAMTMYNGRLZDVMNDY5ZG\\
+**Tocken**: OTdiYWQ3OTQ0ODZlYWMwNmQ3NTkwYzg1ZDFkMWY1\\
+
+
+**Sending MSG**:
+  - Import plivo API
+  - Instanciate Plivo client with Auth ID and tocken
+  - Create Text Message
+
+<ex> c#\\
+        // import
+        using Plivo;
+        // Initiate Plivo SMS sender
+        public PlivoApi SMSPlivo;
+        SMSPlivo = new PlivoApi("MAMTMYNGRLZDVMNDY5ZG", "OTdiYWQ3OTQ0ODZlYWMwNmQ3NTkwYzg1ZDFkMWY1");
+        SMSPlivo.Message.Create(src: "15878124157", dst: "6136566672", text: tMessage);
+
+**Receiving MSG**:
+  - Prepare a receiving Webservice 
+  - Register the web service into Plivo website
+  - When message receives through the Plivo phone number, it calls the registered web service and sends the information
+<ex> c#\\
+        StreamReader reader = new StreamReader(body);
+        string text = reader.ReadToEnd();
+        NameValueCollection coll = HttpUtility.ParseQueryString(text);
+        // coll will be stored into the database
+
+**Receiving message format**: application/x-www-form-urlencoded\\
+**Receiving message List**: To, Format, TotalRate, Units, Text, TotalAmount, Type, MessageUUID\\
+
+<ex> \\
+        To=15878124157&From=16137968271&TotalRate=0&Units=1&Text=test2&TotalAmount=0&Type=sms&MessageUUID=1e860ba8-7ec6-11e8-8624-0257735f0d96
+
+The current setup for the test\\
+**test web service**: https://plivotest.vocantasonline.com/PlivoMr.svc/rsv_msg2\\
+
+SQL DB 10.10.23.153 PlivoMessage sa Vocantas2013!\\
+* CallM branch for Plivo Looking for the same database if any message is coming.\\
+
+
+
+
+
+
+ 

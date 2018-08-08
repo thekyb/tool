@@ -1,0 +1,41 @@
+== Test Result ==
+new thread has been started
+Message has been sent: Num-0\0-   :message(s) queued
+new thread has been started
+Message has been sent: Num-0\0-  9292929 :message(s) queued
+new thread has been started
+Message has been sent: Num-0\0-  !@#$%^&&*(())__+|~
+ :message(s) queued
+new thread has been started
+Message has been sent: Num-0\0-  0123456789
+
+ :message(s) queued
+new thread has been started
+Message has been sent: Num-0\0-  안녕하세요 나는 한국인입니다. 곱하기 세번안녕하세요 나는 한국인입니다. 곱하기 세번안녕하세요 나는 한국인입니다. 곱하기 세번
+
+ :message(s) queued
+new thread has been started
+Message has been sent: Num-0\0-  안녕하세요 나는 한국인입니다. 곱하기 세번안녕하세요 나는 한국인입니다. 곱하기 세번안녕하세요 나는 한국인입니다. 곱하기 여섯번안녕하세요 나는 한국인입니다. 곱하기 세번안녕하세요 나는 한국인입니다. 곱하기 세번안녕하세요 나는 한국인입니다. 곱하기 여섯번안녕하세요 나는 한국인입니다. 곱하기 세번안녕하세요 나는 한국인입니다. 곱하기 세번안녕하세요 나는 한국인입니다. 곱하기 여섯번안녕하세요 나는 한국인입니다. 곱하기 세번안녕하세요 나는 한국인입니다. 곱하기 세번안녕하세요 나는 한국인입니다. 곱하기 여섯번안녕하세요 나는 한국인입니다. 곱하기 세번안녕하세요 나는 한국인입니다. 곱하기 세번안녕하세요 나는 한국인입니다. 곱하기 여섯번
+
+ :message(s) queued
+new thread has been started
+Message has been sent: Num-0\0-  안녕하세요 나는 한국인입니다. 곱하기 세번안녕하세요 나는 한국인입니다. 곱하기 세번안녕하세요 나는 한국인입니다. 곱하기 여섯번안녕하세요 나는 한국인입니다. 곱하기 세번안녕하세요 나는 한국인입니다. 곱하기 세번안녕하세요 나는 한국인입니다. 곱하기 여섯번안녕하세요 나는 한국인입니다. 곱하기 세번안녕하세요 나는 한국인입니다. 곱하기 세번안녕하세요 나는 한국인입니다. :message(s) queued
+new thread has been started
+Message has been sent: Num-0\0-  안녕하세요 나는 한국인입니다. 곱하기 세번안녕하세요 나는 한국인입니다. 곱하기 세번안녕하세요 나는 한국인입니다. 곱하기 여섯번안녕하세요 나는 한국인입니다. 곱하기 :message(s) queued
+new thread has been started
+Message has been sent: Num-0\0-  Testtesttesttest;:QWERasdf"''>?>L:L<M<M!@#$^$%^&)(*_)(*_)* :message(s) queued
+new thread has been started
+Exception :{
+  "api_id": "e92de458-9a72-11e8-8464-02f0efebfcdc",
+  "error": "'16137968' is not a valid phone number."
+}
+new thread has been started
+Exception :{
+  "api_id": "ee29b9dc-9a72-11e8-a06c-0605e3612a06",
+  "error": "dst parameter not present"
+}
+new thread has been started
+Exception :{
+  "api_id": "f79cec78-9a72-11e8-bbfd-02af11be3b72",
+  "error": "'kjkjdckj' is not a valid phone number."
+}

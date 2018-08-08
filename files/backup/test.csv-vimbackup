@@ -1,0 +1,23 @@
+FileName,TTSText
+6000.wav,Hello. This is an emergency measures call from Vocantas.
+6001_0.wav,Are you the staff member of Vocantas? Please say yes or no.
+6001_1.wav,"If you are the staff member of Vocantas, say yes or press one. Otherwise, say no or press two."
+6001_2.wav,"Say yes or press one if you are the staff member of Vocantas. Otherwise, say no or press two."
+6002_0.wav,Is the staff member available to take this call?
+6002_1.wav,"If the staff member is available to take this call, please say yes or press one. Otherwise, say no or press two"
+6002_2.wav,"Say yes or press one if the staff member is available to take this call. Otherwise, say no or press two."
+6003.wav,Vocantas is currently in Code Orange. Emergency measures are in place and you should follow standard Code Orange procedures.
+6004_0.wav,Can you arrive at Vocantas by…
+6004_1.wav,"If you can arrive at Vocantas, please say yes or press one. Otherwise, say no or press two."
+6004_2.wav,"Say yes or press one if you can arrive at Vocantas by the desired time. Otherwise, say no or press two."
+6005.wav,Please enter the site via the employee entrance.
+6006.wav,"Please report to your regular department.  If your department is closed, please report to the cafeteria."
+6007.wav,"If the emergency continues, we may call back to check your availability."
+6008.wav,"At this time, you do not need to come to the office. No further action on your part is required."
+6009.wav,"At this time, you do not need to come to the hospital. No further action on your part is required."
+6010.wav,"Thank you.  As with all emergency situations, please remain calm."
+6011.wav,You are instructed not to show up for your next shift at…
+6012_0.wav,"Please acknowledge receipt of message by saying ‘Yes’, or say ‘Repeat’ to repeat this message."
+6012_1.wav,"To acknowledge receipt of this message, say Yes or press one. Otherwise, say Repeat or press nine to repeat this message."
+6012_2.wav,"Say Yes or press one to acknowledge receipt of this message. Otherwise, say Repeat or press nine to repeat this message."
+6013.wav,We will notify you if the site plans to stay closed for an extended period of time. Please plan to report for subsequent shifts unless otherwise notified.

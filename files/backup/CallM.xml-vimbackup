@@ -1,0 +1,119 @@
+<CallM>
+  <Diagnostics>
+    <EnableLogs>TRUE</EnableLogs>
+  </Diagnostics>
+  <Database>
+    <DBConnection>Data Source=VCRM;Initial Catalog=Scaller_WB;User Id=sa;Password=Vocantas2010;</DBConnection>
+  </Database>
+  <Config>
+    <Interval>0</Interval>
+  </Config>
+  <Messages>
+    <Email>
+      <EmailQueue>
+        <Enabled>False</Enabled>
+        <Interval>20</Interval>
+      </EmailQueue>
+      <EmailGet>
+        <Enabled>False</Enabled>
+        <Interval>0</Interval>
+      </EmailGet>
+      <EmailSend>
+        <Enabled>False</Enabled>
+        <Interval>6</Interval>
+        <MaxSend>50</MaxSend>
+      </EmailSend>
+    </Email>
+    <SMS>
+      <SMSQueue>
+        <Enabled>False</Enabled>
+        <Interval>0</Interval>
+      </SMSQueue>
+      <SMSGet>
+        <Enabled>False</Enabled>
+        <Interval>0</Interval>
+        <ReceivedDateOffSet>0</ReceivedDateOffSet>
+      </SMSGet>
+      <SMSSend>
+        <Enabled>False</Enabled>
+        <Interval>0</Interval>
+        <MaxSend>100</MaxSend>
+      </SMSSend>
+      <SMSModule>
+        <ModuleName>False</ModuleName>
+      </SMSSend>
+    </SMS>
+    <OptOutEnabled>true</OptOutEnabled><OptOutEnabled>true</OptOutEnabled>
+  </Messages>
+  <EmployeeUpdate>
+    <Enabled>True</Enabled>
+    <NewPreferencesEnabled>
+      <Phone>true</Phone>
+      <SMS>true</SMS>
+      <Email>true</Email>
+    </NewPreferencesEnabled>
+    <OverwriteExistingContactPreferences>
+      <Enabled>true</Enabled>
+      <OverwriteName>true</OverwriteName>
+      <OverwritePhone>true</OverwritePhone>
+      <OverwriteEmail>true</OverwriteEmail>
+      <OverwriteSMS>true</OverwriteSMS>
+    </OverwriteExistingContactPreferences>
+    <RunTime desc="New time will not take effect until the service is restarted or the next time the task fires">9:50</RunTime>
+    <LogOnlyAndSkipLocalDbUpdateInsert>False</LogOnlyAndSkipLocalDbUpdateInsert>
+    <PhoneStripoutStringsCommaSeparated>-</PhoneStripoutStringsCommaSeparated>
+    <MaxPhoneLength>14</MaxPhoneLength>
+    <LastRun desc="Clear this value and restart the service to immediately rerun this task"></LastRun>
+    
+    <!--Import by XML-->
+    <EmployeeXMLSourceDir>C:\HGRepo\CallM\CallM\TestXML</EmployeeXMLSourceDir>
+    <EmployeeXmlMappings>
+      <RootNode>RESULTS</RootNode>
+      <ObjectGUIDNode>SAMACCOUNTNAME</ObjectGUIDNode>
+      <DisplayNameNode>DISPLAYNAME</DisplayNameNode>
+      <SamAccountNameNode>SAMACCOUNTNAME</SamAccountNameNode>
+      <EmailNode>EMAIL</EmailNode>
+      <EmployeeStatusUpdateNode>EMPLOYEESTATUSUPDATE</EmployeeStatusUpdateNode>
+      <EmployeeNumber1Node>EMPLOYEENUMBER1</EmployeeNumber1Node>
+      <HomephoneNode>HOMEPHONE</HomephoneNode>
+      <MobileNode>MOBILE</MobileNode>
+    </EmployeeXmlMappings>
+    
+    <!--Import by SQL-->
+    <!--<EmployeelDBConnection>Data Source=172.25.206.35;Initial Catalog=Scaller;User Id=sa;Password=Vocantas2010;</EmployeelDBConnection>
+    <EmployeelDBQuery>SELECT * FROM Employee_Account_ExtTestData</EmployeelDBQuery>-->
+  </EmployeeUpdate>
+  <EmployeePhoneUpdate>
+    <Enabled>False</Enabled>
+    <ServiceURL>http://localhost:64873/EmployeePhoneUpdateService.asmx</ServiceURL>
+    <!--<ServiceUsername></ServiceUsername>-->
+    <!--<ServicePassword></ServicePassword>-->
+    <RunTime desc="New time will not take effect until the service is restarted or the next time the task fires">10:46</RunTime>
+    <LastRun desc="Clear this value and restart the service to immediately rerun this task">10/19/2016 10:46:00 AM</LastRun>
+  </EmployeePhoneUpdate>
+  <ScheduledCallOuts>
+    <Enabled>False</Enabled>
+    <Interval>10</Interval>
+	<ScheduleOffset>0</ScheduleOffset>
+	<ServiceURL>http://localhost:8751/ASCAPI.svc</ServiceURL>
+	<ServiceAuthURL>http://localhost:8751/ASCAuthAPI.svc</ServiceAuthURL>
+    <ServiceUsername>TestAccount2</ServiceUsername>
+    <ServicePassword>Welcome2@2016!</ServicePassword>
+  </ScheduledCallOuts>
+  <SMTP>
+    <MailServer>PROE01.hq.pronexus.com</MailServer>
+    <UserName>pronexus\KevDev</UserName>
+    <Password>Pa$$w0rd</Password>
+  </SMTP>
+  <InvalidResponse>
+    <Enabled>False</Enabled>
+    <MaximumAge desc="The maximum age of a message in hours for an invalid response to be sent">24</MaximumAge>
+    <EmailSendFrom>KevDev@vocantas.com</EmailSendFrom>
+    <EmailSendFromName>ASC-KevDev</EmailSendFromName>
+  </InvalidResponse>
+  <Award>
+    <Enabled>False</Enabled>
+    <Interval>10</Interval>
+    <AutoAwardOffSet>20</AutoAwardOffSet>
+  </Award>
+</CallM>

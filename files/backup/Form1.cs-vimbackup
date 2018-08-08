@@ -1,0 +1,209 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using log4net;
+using Plivo;
+using Plivo.Exception;
+using System.Threading;
+
+namespace WindowsFormsApplication4
+{
+    public partial class Form1 : Form
+    {
+
+        public delegate string MyDelegate();
+        delegate string ctrStr();
+        delegate void StringArgReturningVoidDelegate(string text);
+
+        ILog Log = LogManager.GetLogger(typeof(Form1).Namespace);
+        public PlivoApi SMSPlivo;
+        private string plivoPhoneNumber = "15878124157";
+        public string SMSSuccessMessagePlivo = "message(s) queued";    //Message recieved when the text is sent successfully, this should be configurable
+        int repeatingTimes = 0;
+        int maxRepeatTimes = 0;
+        public Form1()
+        {
+            InitializeComponent();
+            btStartRepeating.Enabled = true;
+            btStopRepeating.Enabled = false;
+            timerPeriodicTest.Enabled = false;
+
+        }
+
+        private void btStartSending_Click(object sender, EventArgs e)
+        {
+            btStartRepeating.Enabled = false;
+            btStopRepeating.Enabled = true;
+
+            timerPeriodicTest.Enabled = true;
+            timerPeriodicTest.Interval = Int32.Parse(tbRepeatingPeriod.Text) * 1000;
+            maxRepeatTimes = Int32.Parse(tbRepeatingNum.Text);
+        }
+
+        public void PutResult(string log)
+        {
+            if (this.rtbLog.InvokeRequired)
+            {
+                StringArgReturningVoidDelegate d = new StringArgReturningVoidDelegate(PutResult);
+                this.Invoke(d, new object[] { log });
+            }
+            else
+            {
+                rtbLog.AppendText(Environment.NewLine + log);
+                Log.Info(log);
+            }
+        }
+
+
+        private void btStopRepeating_Click(object sender, EventArgs e)
+        {
+            btStartRepeating.Enabled = true;
+            btStopRepeating.Enabled = false;
+            timerPeriodicTest.Enabled = false;
+            repeatingTimes = 0;
+            maxRepeatTimes = 0;
+            PutResult("====Thread work has been done====");
+        }
+
+        private void btSstart_Click(object sender, EventArgs e)
+        {
+            DoTest();
+        }
+
+        private void DoTest()
+        {
+            Thread callThread = new Thread(testerThread);
+            callThread.Start(this);
+            PutResult("new thread has been started");
+        }
+        private void testerThread(object data)
+        {
+            try
+            {
+                string testType = getTestType();
+                if (testType.CompareTo("Send Message - Plivo") == 0)
+                {
+                    SendMessagePlivo(repeatingTimes, 0);
+                }
+                if (testType.CompareTo("Send Msg 10 times - Plivo") == 0)
+                {
+                    foreach (var i in Enumerable.Range(0, 10))
+                    {
+                        SendMessagePlivo(repeatingTimes, i);
+                    }
+                }
+                if (testType.CompareTo("Receive Msg - Plivo") == 0)
+                {
+                    ReceiveMessagePlivo(repeatingTimes, 0);
+                }
+                if (testType.CompareTo("Receive Msg 10 times - Plivo") == 0)
+                {
+                    foreach (var i in Enumerable.Range(0, 10))
+                    {
+                        ReceiveMessagePlivo(repeatingTimes, i);
+                    }
+                }
+            }
+            catch (System.InvalidOperationException ex)
+            {
+                PutResult("No Item selected");
+            }
+
+        }
+        private string getTestType()
+        {
+            if (this.cbTestType.InvokeRequired)
+            {
+
+                IAsyncResult result = cbTestType.BeginInvoke(new MyDelegate(getTestTypeDelegate));
+                return (string)cbTestType.EndInvoke(result);
+            }
+            else
+            {
+                return cbTestType.SelectedItem.ToString();
+            }
+        }
+
+        public string getTestTypeDelegate()
+        {
+            try
+            {
+                if (this.cbTestType.InvokeRequired)
+                {
+                    IAsyncResult result = cbTestType.BeginInvoke(new MyDelegate(getTestTypeDelegate));
+                    return (string)cbTestType.EndInvoke(result);
+                }
+                else
+                {
+                    return cbTestType.SelectedItem.ToString();
+                }
+            }
+            catch (System.Exception ex)
+            {
+                PutResult(ex.Message);
+            }
+            return "";
+        }
+
+        private void SendMessagePlivo(int term, int time)
+        {
+            if (SMSPlivo == null)
+            {
+                SMSPlivo = new PlivoApi("MAMTMYNGRLZDVMNDY5ZG", "OTdiYWQ3OTQ0ODZlYWMwNmQ3NTkwYzg1ZDFkMWY1");
+            }
+
+            String tNumber = getPhoneNum();
+            string tMessage = "Message has been sent: " + "Num-" + term + "\\" + time + "-  " + tbTextMsg.Text;
+            var rVendorResult = SMSPlivo.Message.Create(src: plivoPhoneNumber, dst: new List<String> { tNumber }, text: tMessage);
+            PutResult(tMessage);
+        }
+
+        private void ReceiveMessagePlivo(int term, int time)
+        {
+            if (SMSPlivo == null)
+            {
+                SMSPlivo = new PlivoApi("MAMTMYNGRLZDVMNDY5ZG", "OTdiYWQ3OTQ0ODZlYWMwNmQ3NTkwYzg1ZDFkMWY1");
+            }
+
+            String tNumber = getPhoneNum();
+            string tMessage = "Message has been sent: " + "Num-" + term + "\\" + time + "-  " + tbTextMsg.Text;
+            var rVendorResult = SMSPlivo.Message.Create(src: plivoPhoneNumber, dst: new List<String> { tNumber }, text: tMessage);
+            PutResult(tMessage);
+        }
+
+        private string getPhoneNum()
+        {
+            if (this.tbPhoneNum.InvokeRequired)
+            {
+
+                IAsyncResult result = tbPhoneNum.BeginInvoke(new MyDelegate(getPhoneNumDelegate));
+                return (string)tbPhoneNum.EndInvoke(result);
+            }
+            else
+            {
+                return tbPhoneNum.Text;
+            }
+        }
+
+        public string getPhoneNumDelegate()
+        {
+            return tbPhoneNum.Text;
+        }
+
+        private void timerPeriodicTest_Tick(object sender, EventArgs e)
+        {
+            repeatingTimes++;
+            if (repeatingTimes >maxRepeatTimes)
+            {
+                btStopRepeating.PerformClick();
+            }
+            DoTest();
+        }
+    }
+}

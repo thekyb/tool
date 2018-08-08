@@ -1,0 +1,66 @@
+test One time sending message
+
+No message 
+Number
+
+symbols
+!@#$%^&&*(())__+|~
+
+Long text
+Hello this is a test message (repeating)Hello this is a test message (repeating)Hello this is a test message (repeating)Hello this is a test message (repeating)Hello this is a test message (repeating)Hello this is a test message (repeating)
+
+another Language
+안녕하세요 나는 한국인입니다. 곱하기 세번안녕하세요 나는 한국인입니다. 곱하기 세번안녕하세요 나는 한국인입니다. 곱하기 세번
+
+Long text with another Laguage.  Took a bit long time but succeeded
+안녕하세요 나는 한국인입니다. 곱하기 세번안녕하세요 나는 한국인입니다. 곱하기 세번안녕하세요 나는 한국인입니다. 곱하기 여섯번안녕하세요 나는 한국인입니다. 곱하기 세번안녕하세요 나는 한국인입니다. 곱하기 세번안녕하세요 나는 한국인입니다. 곱하기 여섯번안녕하세요 나는 한국인입니다. 곱하기 세번안녕하세요 나는 한국인입니다. 곱하기 세번안녕하세요 나는 한국인입니다. 곱하기 여섯번
+
+Long text.  Took a bit long time but succeeded
+안녕하세요 나는 한국인입니다. 곱하기 세번안녕하세요 나는 한국인입니다. 곱하기 세번안녕하세요 나는 한국인입니다. 곱하기 여섯번안녕하세요 나는 한국인입니다. 곱하기 세번안녕하세요 나는 한국인입니다. 곱하기 세번안녕하세요 나는 한국인입니다. 곱하기 여섯번안녕하세요 나는 한국인입니다. 곱하기 세번안녕하세요 나는 한국인입니다. 곱하기 세번안녕하세요 나는 한국인입니다. 
+
+Long text.  Took a bit long time but succeeded
+안녕하세요 나는 한국인입니다. 곱하기 세번안녕하세요 나는 한국인입니다. 곱하기 세번안녕하세요 나는 한국인입니다. 곱하기 여섯번안녕하세요 나는 한국인입니다. 곱하기 
+
+English with several symbols
+Testtesttesttest;:QWERasdf"''>?>L:L<M<M!@#$^$%^&)(*_)(*_)*
+
+Wrong phone-number
+Generate a exception : "'16137968' is not a valid phone number."
+
+"" phone-number
+Generate a exception : "dst parameter not present"
+
+Non-numeric phone-number 
+Generate a exception : "'kjkjdckj' is not a valid phone number."
+
+delete locale information from message : 6137968271
+Queued but didn't come to my phone
+
+add dash between phone-numbers : 613-796-8271
+Queued but didn't come to my phone
+
+add dash between phone-numbers : 1613-796-8271
+Queued and message received
+
+add space between phone-numbers : 1 6 1 3 7 9 6 8 2 7 1
+Queued and message received
+
+add space between phone-numbers : 1                               6 1 3 7 9 6 8 2 7 1
+Queued and message received
+
+add space between phone-numbers : 1-613-796-8271
+
+1-(613)-796-8271
+Queued and message received
+
+(613)-796-8271
+Queued but didn't come to my phone
+
+for usual testcases 
+
+Vocantas Health Shift Offer:
+Jul01
+0900-1730 0900-1730
+Manufacturing
+Assembler A
+Text Y6479 to bid

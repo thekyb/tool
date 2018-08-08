@@ -69,9 +69,13 @@ nmap yD :let @* = expand('%:p:h')<CR>
 "           Movement                 "
 """"""""""""""""""""""""""""""""""""""
 
-nmap <S-Enter> a<CR><Esc>k$
 nmap <CR> i<CR><Esc>
-nmap <Space><CR> o<Esc>k
+nmap <S-Enter> a<CR><Esc>
+nmap <Space><CR> a<CR><Esc>k$
+nmap <Space><S-Enter> a<CR><Esc> a<CR><Esc>k$
+nmap é o<esc>
+nmap É ko<esc>
+
 " Delete without yanking
 nnoremap d "_d
 vnoremap d "_d
@@ -264,13 +268,7 @@ noremap <Space>q :q<CR>
 noremap <Space>Q :q!<CR>
 "Quick quit commadn
 noremap <Space>c :Calendar<CR>
-"Quick fold commadn
-noremap <Space>f va{zf
-augroup AutoSaveFolds
-  autocmd!
-  autocmd BufWinLeave * silent mkview
-  autocmd BufWinEnter * silent loadview
-augroup END
+
 "next tabpage
 noremap <C-Tab> :tabnext<CR>
 noremap <C-n> :tabe<CR>
@@ -284,10 +282,10 @@ vnoremap Y y
 
 
 "...................................................................
-"Added in 2016. 5. 16 : to make a view before close and re open that view after it opens
-
-    " autocmd BufWinLeave *.* mkview
-    " autocmd BufWinEnter *.* silent loadview 
+"Quick fold command
+noremap <Space>f va{zf
+autocmd BufWinLeave ?* silent mkview
+autocmd BufWinEnter ?* silent loadview
 "...................................................................
 
 "...................................................................
@@ -362,7 +360,7 @@ endif
 "    Vim Plugin section              "
 """"""""""""""""""""""""""""""""""""""
 "Vim Plugin section"
-call plug#begin('vim80/plugged')
+call plug#begin('vim81/plugged')
 
 " Make sure you use single quotes
 
@@ -370,6 +368,7 @@ call plug#begin('vim80/plugged')
 Plug 'junegunn/vim-easy-align'
 " Initialize plugin system
 " Plug 'scrooloose/nerdcommenter'
+Plug 'scrooloose/nerdtree', { 'on':  'NERDTreeToggle' }
 Plug 'https://github.com/szw/vim-dict.git'
 Plug 'https://github.com/vim-scripts/dbext.vim.git'
 Plug 'https://github.com/tpope/vim-commentary.git'

@@ -1,0 +1,17 @@
+<node name="Come-In_Emergency" type="root" img="root.gif">
+  <node name="Welcome" type="message" img="person.gif" />
+  <node name="Q1" type="message" img="yesNoMessage.gif">
+    <node name="YES" type="branch" img="branch.gif">
+      <node name="Instructions" type="message" img="person.gif" />
+    </node>
+    <node name="No" type="branch" img="branch.gif">
+      <node name="Segway1" type="message" img="person.gif" />
+      <node name="Segway2" type="message" img="person.gif" />
+    </node>
+  </node>
+  <node name="Thanks" type="message" img="person.gif" />
+  <node name="Bye1" type="message" img="person.gif" />
+  <node name="End2" type="message" img="end.gif" />
+</node>
+
+

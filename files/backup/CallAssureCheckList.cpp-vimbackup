@@ -1,0 +1,42 @@
+Preparation
+    Sinario
+    Prompts
+    
+
+Setup MomQA Website
+    Unit Script : just make a script 
+    Rules : just make a smple rule 
+    Parameters : Prepare the list of a patient(student) information parameters
+Storage - MomQA
+    /* UnitScript */
+    /* MapScript */
+    /* Prompts */
+    /* MaxErrUnit */
+    /* GoodByeUnit */
+Storage - 10.10.23.27 (vocantas online)
+    /* UnitScript */
+    /* MapScript */
+    /* Prompts */
+    /* MaxErrUnit */
+    /* GoodByeUnit */
+Storage - 10.10.23.91 (mom7)
+    /* UnitScript */
+    /* MapScript */
+    /* Prompts */
+    /* MaxErrUnit */
+    /* GoodByeUnit */
+Storage - 10.10.23.165 (mom8)
+    /* UnitScript */
+    /* MapScript */
+    /* Prompts */
+    /* MaxErrUnit */
+    /* GoodByeUnit */
+Email
+    Stored Prosidur
+    
+    
+TextWork
+    Mom Work
+    Email in Mom Work 
+    Vocantas-online Work 
+    Email in Vocantas-online Work 

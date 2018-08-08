@@ -1,0 +1,1795 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Data;
+using System.Net.Mail;
+using System.Text.RegularExpressions;
+using CallM.ca.smsgateway.www;
+using System.Configuration;
+using Microsoft.Exchange.WebServices.Data;
+using VocLib;
+using log4net;
+using Plivo;
+using Plivo.Exception;
+
+namespace CallM
+{
+    public class MessageManager
+    {
+        public string AppPath = "";
+
+        ILog Log = LogManager.GetLogger(typeof(MessageManager).Namespace);
+
+        private bool isPlivo;
+        public PlivoApi SMSPlivo;
+        private string plivoPhoneNumber = "15878124157";
+        public string SMSSuccessMessagePlivo = "message(s) queued";    //Message recieved when the text is sent successfully, this should be configurable
+        public DatabaseAccess plivoDB;
+
+        public SendSMS SMSMessenger;
+        public string SMSSuccessMessageSwift = "message(s) queued";    //Message recieved when the text is sent successfully, this should be configurable
+
+        private const string cNewLine = "\r\n";
+        private const string cTab = "\t";
+
+        //ToDo make Swift info configurable
+        //VIHA Prod Key: 4f6WmJ7036471VLISm2AmhNRQEXSqCD2
+        //VIHA Test Key: T6r45qm2BMF4kOZ54jAXiLQbVuttt1NF
+        //Vocantas Key: Y17i70Db8O67HApEIEQ4FA5Y31OFM74Q
+        //string swAccountKey = "4f6WmJ7036471VLISm2AmhNRQEXSqCD2";
+
+        System.Net.Mail.MailMessage msgAdmin;
+        SmtpClient SmtpMail;
+
+        public string SendMessagePlivo(out string rVendorResult, string tNumber, string tMessage)
+        {
+            tNumber = "1" + tNumber;
+            rVendorResult = SMSPlivo.Message.Create(src: plivoPhoneNumber, dst: new List<String> { tNumber }, text: tMessage).Message;
+            Log.Info(rVendorResult.ToString());
+            return (rVendorResult.ToLower() == SMSSuccessMessagePlivo.ToLower())? "Sent": "Error";
+        }
+
+        public string SendMessageSwift(out string rVendorResult, string tNumber, string tMessage, string swAccountKey)
+        {
+            rVendorResult = SMSMessenger.SendMessage(tNumber, tMessage, swAccountKey);
+            return (rVendorResult.ToLower() == SMSSuccessMessageSwift.ToLower())? "Sent": "Error";
+            // TODO_Jean the value should different from swift's one
+        }
+
+        public MessageManager(string pAppPath, bool SMSEnabled, bool EmailEnabled, string pSmtpServer, string pUser, string pPassword)
+        {
+            AppPath = pAppPath;
+            isPlivo = xDoc.SelectSingleNode(AppName + "/Messages/SMS/SMSGet/Enabled").upper == "PLIVO" ? true : false; 
+            if (SMSEnabled)
+            {
+                try
+                {
+                    if (isPlivo)
+                        SMSPlivo = new PlivoApi("MAMTMYNGRLZDVMNDY5ZG", "OTdiYWQ3OTQ0ODZlYWMwNmQ3NTkwYzg1ZDFkMWY1");
+                    else 
+                        SMSMessenger = new SendSMS();
+                }
+                catch (System.Net.WebException ex)
+                {
+                    Log.Error("MessageManager Init SMS-error: There was an error connecting to the SMS gateway. " + ex.Message);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error("MessageManager Init SMS-error:" + ex.Message);
+                }
+            }
+            if (EmailEnabled)
+            {
+                try
+                {
+                    msgAdmin = new System.Net.Mail.MailMessage();
+                    SmtpMail = new SmtpClient(pSmtpServer);
+                    SmtpMail.Credentials = new System.Net.NetworkCredential(pUser, pPassword);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error("MessageManager Init Email-pSmtpServer:" + pSmtpServer + " pUser:" + pUser + " error:" + ex.Message);
+                }
+            }
+        }
+
+        #region Private Helper Methods
+        //Try to parse out an ID from the string and return it as a string
+        //Currently used to reteive a NotificaionID from the subject line of an email
+        //Returns the first number
+        private string GetIDFromString(string pInStr)
+        {
+            try
+            {
+                string RetVal = "0";    //Default to 0
+
+                //Split out string keepoing just the numbers
+                string[] tNums = Regex.Split(pInStr, @"\D+");
+                foreach (string tNum in tNums)
+                {
+                    if (tNum.Trim().Length > 0)
+                    {
+                        //First non blank entry is the first number
+                        RetVal = tNum;
+                        break;
+                    }
+                }
+
+                return RetVal;
+            }
+            catch (Exception ex)
+            {
+                return "0";
+            }
+        }
+
+        //Try to parse out the ID number from the body of the email
+        //Currently the body contains the first letter as a response and the next set oc characters is the ID
+        //Returns the ID plus the string passed is by ref so that the first charcter response and ID are removed
+        private string GetIDFromBody(ref string pInStr)
+        {
+            try
+            {
+                string RetVal = "0";    //Default to 0
+                string tID = "";
+                string sNextChar = "";
+                bool LoopFlag = true;
+                //int tFirstSpace = 0;
+
+                //If the string is only one char (or less) don't bother with it
+                if (pInStr.Length <= 1)
+                    return RetVal;
+
+                pInStr = pInStr.Remove(0, 1);   //Strip off response
+
+                //Loop through stripp of each char until a non number is found
+                while (LoopFlag)
+                {
+                    //Make sure there are still characters left
+                    //Also the ID will never be more than 12 charcters
+                    if (pInStr.Length == 0 || tID.Length > 12)
+                    {
+                        LoopFlag = false;
+                    }
+                    else
+                    {
+                        //Process next char
+                        sNextChar = pInStr.Substring(0, 1);
+                        if (char.IsDigit(sNextChar, 0))
+                        {
+                            //Append this to the notification
+                            tID += sNextChar;
+                            //Remove it from the string
+                            pInStr = pInStr.Remove(0, 1);
+                        }
+                        else
+                        {
+                            //Ran into a non digit so stop
+                            LoopFlag = false;
+                        }
+                    }
+                }
+
+                //If a number was found then return it
+                if (tID.Length > 0)
+                {
+                    RetVal = tID;
+                }
+
+                return RetVal;
+            }
+            catch (Exception ex)
+            {
+                return "0";
+            }
+        }
+
+        private string CleanPhoneNumber(string pNum)
+        {
+            try
+            {
+                string RetVal = pNum;
+                List<string> SpecialChars = new List<string> { "+", "-", "(", ")" };
+
+                foreach (string spCh in SpecialChars)
+                {
+                    RetVal = RetVal.Replace(spCh, "");
+                }
+
+                if (RetVal.StartsWith("1"))
+                {
+                    RetVal = RetVal.Remove(0, 1);
+                }
+
+                return RetVal;
+            }
+            catch
+            {
+                //On error return what was passed in
+                return pNum;
+            }
+        }
+
+        private bool RedirectionUrlValidationCallback(string redirectionUrl)
+        {
+            try
+            {
+                // The default for the validation callback is to reject the URL.
+                bool result = false;
+
+                Uri redirectionUri = new Uri(redirectionUrl);
+
+                // Validate the contents of the redirection URL. In this simple validation
+                // callback, the redirection URL is considered valid if it is using HTTPS
+                // to encrypt the authentication credentials. 
+                if (redirectionUri.Scheme == "https")
+                {
+                    result = true;
+                }
+                return result;
+            }
+            catch (Exception ex)
+            {
+                Log.Error("RedirectionUrlValidationCallback-error:" + ex.Message);
+                return false;
+            }
+        }
+
+        private int ProcessEmailQueueIns(DatabaseAccess _da, System.Collections.ObjectModel.Collection<Item> _messages, ExtendedPropertyDefinition _extendedProperty)
+        {
+            int result = 0;
+            string ErrMess = "Entering";
+            try
+            {
+                int bodyTextToStoreLength;
+                if (!int.TryParse(ConfigurationManager.AppSettings["BodyTextToStoreLength"], out bodyTextToStoreLength))
+                {
+                    // use this as default if not set in appconfig
+                    bodyTextToStoreLength = 255;
+                }
+
+                //string sqlI = "INSERT INTO EmailQueueIn (EwsUniqueId, EwsChangeKey, InsertTime, ReceivedTime, ReceivedTo, ReceivedCC, ReceivedFrom, ReceivedFromName, Subject, Body, Status, LastUpdated) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                string sqlI = "INSERT INTO EmailQueueIn (EwsUniqueId, EwsChangeKey, InsertTime, ReceivedTime, ReceivedTo, ReceivedCC, ReceivedFrom, ReceivedFromName, Subject, Body, Status, LastUpdated) VALUES (@EwsUniqueId,@EwsChangeKey,@InsertTime,@ReceivedTime, @ReceivedTo,@ReceivedCC,@ReceivedFrom,@ReceivedFromName,@Subject,@Body,@Status,@LastUpdated)";
+
+                //string[] sqlIParams = { "@EwsUniqueId", "@EwsChangeKey", "@InsertTime", "@ReceivedTime", "@ReceivedTo", "@ReceivedCC", "@ReceivedFrom", "@ReceivedFromName", "@Subject", "@Body", "@Status", "@LastUpdated" };
+                string[] sqlIParams = { "EwsUniqueId", "EwsChangeKey", "InsertTime", "ReceivedTime", "ReceivedTo", "ReceivedCC", "ReceivedFrom", "ReceivedFromName", "Subject", "Body", "Status", "LastUpdated" };
+                object[] sqlIVals;
+
+                DateTime dt;
+                string body = String.Empty;
+
+                ErrMess = "Starting foreach message";
+                foreach (EmailMessage message in _messages)
+                {
+                    //Add a try catch to the for loop so it doesn't get stuck on one mesage
+                    try
+                    {
+                        var recipients = String.Join(";", message.ToRecipients.Select(x => x.Address)); // There must be at least on recipient
+                        var cc = message.CcRecipients.Count > 0 ? String.Join(";", message.CcRecipients.Select(x => x.Address)) : (object)DBNull.Value;
+
+                        ErrMess = "Getting Body";
+                        body = "";
+                        if (message.Body.Text != null)
+                        {
+                            body = message.Body.Text.Trim();
+                            body = body.Substring(0, body.Length > bodyTextToStoreLength ? bodyTextToStoreLength : body.Length);
+                        }
+
+                        dt = DateTime.Now;
+
+                        string tmessageFromAddress = "unknown";
+                        string tmessageFromName = "";
+                        string tmessageSubject = "";
+                        string tStatus = "Received";    //Status for receiving emails.  Status of "Received" mean email will be processed
+
+                        ErrMess = "Check sqlVals";
+                        //message.Id.UniqueId, message.Id.ChangeKey, dt, message.DateTimeReceived, recipients, cc, tmessageFromAddress, message.From.Name.Length > 0 ? message.From.Name : (object)DBNull.Value, tmessageSubject, @body, "Received", dt
+                        //ErrMess = "message.Id.UniqueId:" + message.Id.UniqueId;
+                        //ErrMess = "message.Id.ChangeKey" + message.Id.ChangeKey;
+                        //ErrMess = "dt" + dt.ToString("yyyy/MM/dd HH:mm:ss");
+                        //ErrMess = "message.DateTimeReceived:" + message.DateTimeReceived.ToString("yyyy/MM/dd HH:mm:ss");
+                        //ErrMess = "recipients:" + recipients;
+                        //ErrMess = "cc:" + cc;
+                        //ErrMess = "tmessageFromAddress:" + tmessageFromAddress;
+                        //ErrMess = "message.From.Name:" + (message.From.Name.Length > 0 ? message.From.Name : "null");
+                        //ErrMess = "@body:" + @body;
+
+                        if (recipients != null)
+                        {
+                            ErrMess += " recipients:" + recipients;
+                        }
+                        //If message from is null set the staus to invalid so the email is not processed
+                        if (message.From != null)
+                        {
+                            //If message.From not null check if message.From.Address
+                            if (message.From.Address != null && message.From.Address.Length > 0)
+                            {
+                                ErrMess += " message.From.Address:" + message.From.Address;
+                                tmessageFromAddress = message.From.Address;
+                            }
+                            else
+                            {
+                                //From address is null or blank
+                                ErrMess += " message.From.Address: unknown";
+                                tStatus = "Invalid";
+                            }
+                            if (message.From.Name != null)
+                            {
+                                ErrMess += " message.From.Name:" + message.From.Name;
+                                tmessageFromName = message.From.Name;
+                            }
+                        }
+                        else
+                        {
+                            ErrMess += " message.From: null";
+                            tStatus = "Invalid";
+                        }
+                        if (@message.Subject != null)
+                        {
+                            ErrMess += " @message.Subject:" + @message.Subject;
+                            tmessageSubject = @message.Subject;
+                        }
+                        ErrMess = "Setting sqlVals";
+                        //sqlIVals = new object[] { message.Id.UniqueId, message.Id.ChangeKey, dt, message.DateTimeReceived, recipients, cc, tmessageFromAddress, message.From.Name.Length > 0 ? message.From.Name : (object)DBNull.Value, tmessageSubject, @body, "Received", dt };
+                        sqlIVals = new object[] { message.Id.UniqueId, message.Id.ChangeKey, dt, message.DateTimeReceived, recipients, cc, tmessageFromAddress, tmessageFromName, tmessageSubject, @body, tStatus, dt };
+                        ErrMess = "sqlVals set";
+
+                        // We set email IdRead = true once the email data has been inserted into the db
+                        try
+                        {
+                            ErrMess = "ExecuteSQL";
+                            _da.ExecuteSQL(sqlI, sqlIParams, sqlIVals);
+                            result++;
+                            // We use a custom extended property instead of the isRead
+                            // message.IsRead = true;
+                            // Set custom extended Processed property = true
+                            message.SetExtendedProperty(_extendedProperty, true);
+                            message.Update(ConflictResolutionMode.AutoResolve);
+                        }
+                        catch (Exception ex)
+                        {
+                            // ToDo: Log error and continue to next item
+                            Log.Error("ProcessEmailQueueIns ExecuteSQL-error:" + ex.Message);
+                            Log.Error("ProcessEmailQueueIns ExecuteSQL-error ErrMess:" + ErrMess);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error("ProcessEmailQueueIns foreach message-error:" + ex.Message);
+                        Log.Error("ProcessEmailQueueIns foreach message-error ErrMess:" + ErrMess);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error("ProcessEmailQueueIns-error:" + ex.Message);
+                Log.Error("ProcessEmailQueueIns-error ErrMess:" + ErrMess);
+            }
+
+            return result;
+        }
+
+        //From Notification.cs
+        //Returns the shortened date MMMdd for use in SMS (example: June 3rd = JUN03)
+        public string GetSMSDate(string pDate)
+        {
+            try
+            {
+                string RetVal = "";
+                DateTime dDate;
+
+                if (DateTime.TryParse(pDate, out dDate))
+                {
+                    RetVal = dDate.ToString("MMMdd");
+                }
+
+                return RetVal;
+            }
+            catch (Exception ex)
+            {
+                Log.Error("GetSMSDate-error Reference pDate: " + pDate + " Error:" + ex.Message);
+                return "";
+            }
+
+        }
+        //From Notification.cs
+        //Returns the shortened time HHss for use in SMS (example: 3:330pm = 1530)
+        public string GetSMSTime(string pDate)
+        {
+            try
+            {
+                string RetVal = "";
+                DateTime dDate;
+
+                if (DateTime.TryParse(pDate, out dDate))
+                {
+                    RetVal = dDate.ToString("HHmm");
+                }
+
+                return RetVal;
+            }
+            catch (Exception ex)
+            {
+                Log.Error("GetSMSTime-error Reference pDate: " + pDate + " Error:" + ex.Message);
+                return "";
+            }
+
+        }
+
+        public string GetMessageContent(string ContentKey, DatabaseAccess dbCallAssure)
+        {
+            string RetVal = "";
+
+            try
+            {
+                string clientID = ConfigurationManager.AppSettings.Get("ClientID");
+
+                RetVal = dbCallAssure.GetValue("SELECT ContentText FROM MessageContent WHERE ContentKey = '" + ContentKey + "' AND ClientID = " + clientID);
+
+                if (ContentKey.Contains("EmailBody"))
+                {
+                    RetVal += dbCallAssure.GetValue("SELECT ContentText FROM MessageContent WHERE ContentKey = 'EmailFooter' AND ClientID = " + clientID);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error("GetMessageContent Error:" + ex.Message);
+            }
+
+            return RetVal;
+        }
+        #endregion
+
+        #region PublicMethods
+        //Check the Queue for SMS's to send
+        //pMaxSend - Max number of SMS's to send (if < 1 send all
+        public int SMSSendFromQueue(int pMaxSend, DatabaseAccess pDA)
+        {
+            int RetVal = 0; //Returns the number of SMS's successfully sent.
+            try
+            {
+                Log.Info("SMSSendFromQueue starting...");
+                int cntSend = 0;
+                //Get a message off the queue
+                //KG20170530 Added "and SendTime <= '{0}'" to the query in order to allow for scheduled SMS.
+                string tSQL = "update SMSQueueOut set Status = 'InProgress', LastUpdated = '{0}' output inserted.* where sQoID = (select top(1) sQoID from SMSQueueOut where Active = 'True' and status = 'Queued' and SendTime <= '{0}' order by sendtime, sQoID)";
+                //Update the queue with the results
+                string tSQLup = "update SMSQueueOut set Status = '{0}', Result = '{1}', LastUpdated = '{2}', VendorResult = '{3}' where sQoID = {4}";
+                DataRow drSMS;
+                DataSet dsSMS = new DataSet();
+                string tUpTime;
+
+                //Stuff for sending SMS
+                string swAccountKey = ConfigurationManager.AppSettings["swAccountKey"];     //Swift AccountKey
+
+                string tsQoID;
+                string tNumber = "";
+                string tMessage = "";
+                //temID, tUnitId, tNotificationID, tSendTime,
+                int? temID = null;
+                int? tUnitId = null;
+                int? tNotificationID = null;
+                int tErrorRetry = 0;
+                DateTime tSendTime;
+
+                // string SendResult = "";
+
+                //Temp value for updating the queue
+                string rStatus = "";
+                string rResult = "";
+                string rLastUpdated = "";
+                string rVendorResult = "";
+
+                //For checking the message result of an SMS and requeue-ing if required
+                string[] ErrMessages = ConfigurationManager.AppSettings["SMSErrorMessList"]?.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries);
+                //Get error retry max, default 0.
+                int ErrRetryTotal = 0;
+                string sErrRetryTotal = ConfigurationManager.AppSettings["SMSErrRetryTotal"];
+                int.TryParse(sErrRetryTotal, out ErrRetryTotal);
+                //Get the minutes offset, this is used to re-queue the SMS in the future, default 0.
+                double RequeueMinutesOffSet = 0;
+                string sRequeueMinutesOffSet = ConfigurationManager.AppSettings["SMSRequeueMinutesOffSet"];
+                double.TryParse(sRequeueMinutesOffSet, out RequeueMinutesOffSet);
+
+                bool LoopFlag = true;
+                while (LoopFlag)
+                {
+                    rVendorResult = "";
+                    rResult = "";
+
+                    temID = null;
+                    tUnitId = null;
+                    tNotificationID = null;
+
+                    //See if there are any SMS's to send
+                    tUpTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
+                    dsSMS = pDA.GetDataSet(string.Format(tSQL, tUpTime));
+
+                    if (dsSMS != null && dsSMS.Tables[0].Rows.Count > 0)
+                    {
+                        //Setup the SMS info
+                        drSMS = dsSMS.Tables[0].Rows[0];
+                        tsQoID = drSMS["sQoID"].ToString();
+                        tNumber = drSMS["SMSNumber"].ToString();
+                        tMessage = drSMS["Message"].ToString();
+                        //Save parameters in case of requeue
+                        try
+                        {
+                            if (drSMS["PersonID"].ToString() != null)
+                            {
+                                int pemid;
+                                if (Int32.TryParse(drSMS["PersonID"].ToString(), out pemid))
+                                {
+                                    temID = pemid;
+                                }
+                            }
+                            if (drSMS["UnitID"].ToString() != null)
+                            {
+                                int pUnitID;
+                                if (Int32.TryParse(drSMS["UnitID"].ToString(), out pUnitID))
+                                {
+                                    tUnitId = pUnitID;
+                                }
+                            }
+                            if (drSMS["NotificationID"].ToString() != null)
+                            {
+                                int pNotificationID;
+                                if (Int32.TryParse(drSMS["NotificationID"].ToString(), out pNotificationID))
+                                {
+                                    tNotificationID = pNotificationID;
+                                }
+                            }
+                            tErrorRetry = 0;
+                            if (drSMS["ErrorRetry"].ToString() != null)
+                            {
+                                int pErrorRetry;
+                                if (Int32.TryParse(drSMS["ErrorRetry"].ToString(), out pErrorRetry))
+                                {
+                                    tErrorRetry = pErrorRetry;
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Warn("SMSSendFromQueue, Error saving info for requeue tsQoID:" + tsQoID, ex);
+                        }
+
+                        dsSMS.Clear();
+                        rVendorResult = "";
+
+                        try
+                        {
+                            cntSend++;  //Inc counter for the number of sends
+                                        //Send the SMS
+                            if (PLIVO)
+                            {
+                                Log.Warn("trying to send a message");
+                                rResult = SendMessagePlivo(out rVendorResult, tNumber, tMessage);
+                            }
+                            else {
+                            rResult = SendMessageSwift(out rVendorResult, tNumber, tMessage, swAccountKey);
+                            }
+                            if (rResult == "Sent")
+                                RetVal++;
+                        }
+                        catch (Exception ex)
+                        {
+                            rResult = "Error";
+
+                            if (String.IsNullOrEmpty(rVendorResult))
+                            {
+                                rVendorResult = ex.Message.Length > 255 ? ex.Message.Substring(0, 255) : ex.Message;
+                            }
+
+                            Log.Error("SMSSendFromQueue, Sending SMS-tsQoID:" + tsQoID, ex);
+                        }
+
+                        rStatus = "Done";
+                        rLastUpdated = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
+                        pDA.ExecuteSQL(string.Format(tSQLup, rStatus, rResult, rLastUpdated, rVendorResult.Replace("'", "''"), tsQoID));
+
+                        //Check for error messages and requeue if eligable
+                        try
+                        {
+                            //Re-queue specific errored SMS's
+                            tErrorRetry++;
+                            if (rResult.ToLower() == "error" && tErrorRetry <= ErrRetryTotal)
+                            {
+                                foreach (string ErrMess in ErrMessages)
+                                {
+                                    if (rVendorResult.StartsWith(ErrMess))
+                                    {
+                                        //Re-Queue errored message for X minutes in the future so that the connection might come back
+                                        int inSMSid = 0;
+                                        tSendTime = Convert.ToDateTime(DateTime.Now.AddMinutes(RequeueMinutesOffSet).ToString("yyyy-MM-dd HH:mm:ss"));
+                                        inSMSid = VocLib.Helpers.Helpers.QueueSMS(pDA, temID, tUnitId, tNotificationID, true, tSendTime, tNumber, tMessage, "CallM", tErrorRetry, Log);
+                                        if (inSMSid > 0)
+                                        {
+                                            Log.Info("SMSSendFromQueue, VocLib.SendSMS requeued-inSMSid:" + inSMSid.ToString());
+                                        }
+                                        else
+                                        {
+                                            Log.Error("SMSSendFromQueue, VocLib.SendSMS failed-tsQoID:" + tsQoID);
+                                        }
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Error("SMSSendFromQueue, Requeue error-tsQoID:" + tsQoID, ex);
+                        }
+                        //End requeue errors
+                    }
+                    else
+                    {
+                        //No more SMS so exit
+                        LoopFlag = false;
+                    }
+
+                    //Check if the max number of sends, if MaxSends < 1 then ignore and do all
+                    if (pMaxSend > 0 && cntSend >= pMaxSend)
+                    {
+                        //Max sends has been reached
+                        LoopFlag = false;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                //Need to log error
+                Log.Error("SMSSendFromQueue-error.", ex);
+            }
+
+            return RetVal;
+        }
+
+        //Get SMS messages from provider and add them to our inbound queue
+        //pReceivedDateOffSet: number of hours to offset the recieved time.  for swift recieved time is eastern time
+        public int SMSGetMessages(DatabaseAccess pDA, int pReceivedDateOffSet)
+        {
+            int RetVal = 0;
+            try
+            {
+                Log.Info("SMSGetMessages starting...");
+                string tSQLid = "select top(1) ProviderID from SMSQueueIn order by ProviderID desc";
+                string sLastID = "";
+                int iLastID;
+
+                string swAccountKey = ConfigurationManager.AppSettings["swAccountKey"];     //Swift AccountKey
+
+                //Get the last message number stored in the table
+                sLastID = pDA.GetValue(tSQLid);
+                if (sLastID == null)
+                {
+                    //KG20170512
+                    Log.Error("SMSGetMessages-error: Failed to get last SMS ID");
+                    return 0;
+                }
+
+                if (sLastID.Length == 0)
+                {
+                    //Should be and error here because the last ID should never be null
+                    sLastID = "0";
+                }
+
+                if (int.TryParse(sLastID, out iLastID))
+                {
+                    string tSQL = "Insert into SMSQueueIn (ProviderID, InsertTime, ReceivedDate, SMSNumber, Message, Status, LastUpdated) values ({0}, '{1}', '{2}', '{3}', '{4}', '{5}', '{6}');";
+                    string tSQLFull = "";   //Full string of multiple Insert statments
+                    string tProviderID = "";
+                    string tInsertTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
+                    string tReceivedDate = "";
+                    string tSMSNumber = "";
+                    string tMessage = "";
+                    string tStatus = "Received";
+                    string tLastUpdated = "";
+
+                    Log.Debug("SMSGetMessages-Getting iLastID:" + iLastID.ToString());
+                    
+                    if (Plivo)
+                    {
+                        //TODO_Jean Previously the plivoDB was used for receiving message, but getting message here now will be moved to the Plivo get Message part
+
+                        //if (plivoDB == null)
+                        //{
+                        //    plivoDB = new DatabaseAccess("PlivoMessage", Log);
+                        //}
+                        
+                        //List<SMSPlivoIncome> result = PlivoMSGCtrl.GetPlivoMsgList(plivoDB);
+                        //Log.Debug("SMSGetMessages-Done Result count:" + result.Count(s => s != null).ToString());
+                        //foreach (SMSPlivoIncome sResult in result)
+                        //{
+                        //    //Add each new message to the incoimg Queue table
+                        //    RetVal++;
+                        //    //Get tabe values
+                        //    //tProviderID = sResult.MsgID.ToString();
+                        //    tProviderID = "35003021";
+                        //    //tInsertTime will be as above for the whole batch
+                        //    //Save the recieved time and calculate the offset
+                        //    tReceivedDate = sResult.InsertTime;
+                        //    tSMSNumber = sResult.From;
+                        //    tMessage = sResult.Text;
+                        //    //tStatus is always received
+                        //    tLastUpdated = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
+
+                        //    tSQLFull += string.Format(tSQL, tProviderID, tInsertTime, tReceivedDate, tSMSNumber, tMessage, tStatus, tLastUpdated);
+                        // }
+                    }
+                    else {
+
+                        SMSIncomingMessage[] result = SMSMessenger.GetIncomingMessagesAfterID(swAccountKey, iLastID);
+                        Log.Debug("SMSGetMessages-Done Result count:" + result.Count(s => s != null).ToString());
+                        foreach (SMSIncomingMessage sResult in result)
+                        {
+                            //Add each new message to the incoimg Queue table
+                            RetVal++;
+                            //Get tabe values
+                            tProviderID = sResult.MessageNumber.ToString();
+                            //tInsertTime will be as above for the whole batch
+                            //Save the recieved time and calculate the offset
+                            tReceivedDate = sResult.ReceivedDate.AddHours(pReceivedDateOffSet).ToString("yyyy-MM-dd HH:mm:ss.fff");
+                            tSMSNumber = sResult.PhoneNumber;
+                            tMessage = sResult.Message;
+                            //tStatus is always received
+                            tLastUpdated = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
+
+                            tSQLFull += string.Format(tSQL, tProviderID, tInsertTime, tReceivedDate, tSMSNumber, tMessage, tStatus, tLastUpdated);
+                        }
+
+                    }
+
+                    if (RetVal > 0)
+                    {
+                        //If there are messages then Insert them to SMSQueueIN
+                        pDA.ExecuteSQL(tSQLFull);
+                    }
+
+                }
+                else
+                {
+                    //This should never happen as the Provider ID in the Table is an int
+                }
+
+
+            }
+            catch (System.Net.WebException ex)
+            {
+                Log.Error("SMSGetMessages-error: There was an error connecting to the SMS gateway. " + ex.Message);
+            }
+            catch (Exception ex)
+            {
+                Log.Error("SMSGetMessages-error:" + ex.Message);
+            }
+            return RetVal;
+        }
+
+        //Check the Queue for Email's to send
+        //pMaxSend - Max number of SMS's to send (if < 1 send all
+        public int EmailSendFromQueue(int pMaxSend, DatabaseAccess pDA)
+        {
+            int RetVal = 0; //Returns the number of Email's successfully sent.
+            try
+            {
+                Log.Info("EmailSendFromQueue starting...");
+                int cntSend = 0;
+                //Get a message off the queue
+                string tSQL = "update EmailQueueOut set Status = 'InProgress', LastUpdated = '{0}' output inserted.* where eQoID = (select top(1) eQoID from EmailQueueOut where Active = 'True' and status = 'Queued' and SendTime <= '{0}' order by SendTime, eQoID)";
+                //Update the queue with the results
+                string tSQLup = "update EmailQueueOut set Status = '{0}', Result = '{1}', LastUpdated = '{2}', ResultNotes = '{3}' where eQoID = {4}";
+                DataRow drEM;
+                DataSet dsEM = new DataSet();
+                string tUpTime;
+
+                //Stuff for sending Email
+                string teQoID;
+                string tSendTo = "";
+                string tSendCC = "";
+                string tSendFrom = "";
+                string tSendFromName = "";
+                string tSubject = "";
+                string tBody = "";
+                //For requeuing errored emails
+                int? temID = null;
+                int? tUnitId = null;
+                int? tNotificationID = null;
+                int tErrorRetry = 0;
+                DateTime tSendTime;
+
+
+                //Temp value for updating the queue
+                string rStatus = "Done";    //This is always done if we update the record
+                string rResult = "";
+                string rLastUpdated = "";
+                string rResultNotes = "";
+
+                //For checking the message result of an SMS and requeue-ing if required
+                string[] ErrMessages = ConfigurationManager.AppSettings["EmailErrorMessList"]?.Split(new char[] { '|' }, StringSplitOptions.RemoveEmptyEntries); ;
+                //Get error retry max, default 0.
+                int ErrRetryTotal = 0;
+                string sErrRetryTotal = ConfigurationManager.AppSettings["EmailErrRetryTotal"];
+                int.TryParse(sErrRetryTotal, out ErrRetryTotal);
+                //Get the minutes offset, this is used to re-queue the SMS in the future, default 0.
+                double RequeueMinutesOffSet = 0;
+                string sRequeueMinutesOffSet = ConfigurationManager.AppSettings["EmailRequeueMinutesOffSet"];
+                double.TryParse(sRequeueMinutesOffSet, out RequeueMinutesOffSet);
+
+                bool LoopFlag = true;
+                while (LoopFlag)
+                {
+                    rResultNotes = "";
+                    rResult = "";
+
+                    temID = null;
+                    tUnitId = null;
+                    tNotificationID = null;
+
+                    //See if there are any Emails to send
+                    tUpTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
+                    dsEM = pDA.GetDataSet(string.Format(tSQL, tUpTime));
+
+                    if (dsEM != null && dsEM.Tables[0].Rows.Count > 0)
+                    {
+                        //Catch any error sending the email - on error set the status to error and log the error
+                        msgAdmin.To.Clear();    //Reset email
+                        msgAdmin.CC.Clear();
+                        msgAdmin.Bcc.Clear();   //For future
+
+                        //Setup the Email info
+                        drEM = dsEM.Tables[0].Rows[0];
+                        teQoID = drEM["eQoID"].ToString();
+                        tSendTo = drEM["SendTo"].ToString();
+                        tSendCC = drEM["SendCC"].ToString();
+                        tSendFrom = drEM["SendFrom"].ToString();
+                        tSendFromName = drEM["SendFromName"].ToString();
+                        tSubject = drEM["Subject"].ToString();
+                        tBody = drEM["Body"].ToString();
+
+                        //Save parameters in case of requeue
+                        try
+                        {
+                            if (drEM["PersonID"].ToString() != null)
+                            {
+                                int pemid;
+                                if (Int32.TryParse(drEM["PersonID"].ToString(), out pemid))
+                                {
+                                    temID = pemid;
+                                }
+                            }
+                            if (drEM["UnitID"].ToString() != null)
+                            {
+                                int pUnitID;
+                                if (Int32.TryParse(drEM["UnitID"].ToString(), out pUnitID))
+                                {
+                                    tUnitId = pUnitID;
+                                }
+                            }
+                            if (drEM["NotificationID"].ToString() != null)
+                            {
+                                int pNotificationID;
+                                if (Int32.TryParse(drEM["NotificationID"].ToString(), out pNotificationID))
+                                {
+                                    tNotificationID = pNotificationID;
+                                }
+                            }
+                            tErrorRetry = 0;
+                            if (drEM["ErrorRetry"].ToString() != null)
+                            {
+                                int pErrorRetry;
+                                if (Int32.TryParse(drEM["ErrorRetry"].ToString(), out pErrorRetry))
+                                {
+                                    tErrorRetry = pErrorRetry;
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Warn("EmailSendFromQueue, Error saving info for requeue teQoID:" + teQoID, ex);
+                        }
+
+                        dsEM.Clear();   //Don't need the DB info any more
+
+                        try
+                        {
+                            cntSend++;  //Inc counter for the number of sends
+                            //Send the Email
+                            msgAdmin.From = new MailAddress(tSendFrom, tSendFromName);
+                            //Add To List
+                            if (!String.IsNullOrEmpty(tSendTo))
+                            {
+                                string[] toList = tSendTo.Split(';');
+                                foreach (string eTo in toList)
+                                {
+                                    msgAdmin.To.Add(new MailAddress(eTo));
+                                }
+                            }
+                            //Add cc'ed list
+                            if (!String.IsNullOrEmpty(tSendCC))
+                            {
+                                string[] ccList = tSendCC.Split(';');
+                                foreach (string eCC in ccList)
+                                {
+                                    msgAdmin.CC.Add(new MailAddress(eCC));
+                                }
+                            }
+
+                            msgAdmin.Subject = tSubject;
+                            msgAdmin.Body = tBody;
+
+                            msgAdmin.IsBodyHtml = Regex.Match(tBody, @"<\s*([^ >]+)[^>]*>.*?<\s*\/\s*\1\s*>", RegexOptions.IgnoreCase | RegexOptions.Singleline).Success;
+
+                            //Set Variables to update queue
+                            RetVal++;   //Inc to count how many sends
+                            rResultNotes = "";
+                            //Put a specific try catch around the email send
+#if DEBUG
+                            //SmtpMail.Host = "XXXX";
+#endif
+                            SmtpMail.Send(msgAdmin);
+                            rResult = "Sent";
+                        }
+                        catch (Exception ex)
+                        {
+                            rResult = "Error";
+                            if (ex.Message.Length > 255)
+                            {
+                                rResultNotes = ex.Message.Substring(0, 255);
+                            }
+                            else
+                            {
+                                rResultNotes = ex.Message;
+                            }
+                            Log.Error("EmailSendFromQueue, Sending email error-teQoID:" + teQoID, ex);
+                        }
+
+                        rLastUpdated = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
+                        //Update record in Queue
+                        pDA.ExecuteSQL(string.Format(tSQLup, rStatus, rResult, rLastUpdated, rResultNotes, teQoID));
+
+                        //Check for error messages and requeue if eligable
+                        try
+                        {
+                            //Re-queue specific errored Email's
+                            tErrorRetry++;
+                            if (rResult.ToLower() == "error" && tErrorRetry <= ErrRetryTotal)
+                            {
+                                foreach (string ErrMess in ErrMessages)
+                                {
+                                    if (rResultNotes.StartsWith(ErrMess))
+                                    {
+                                        //Re-Queue errored message for X minutes in the future so that the connection might come back
+                                        int inEMid = 0;
+                                        tSendTime = Convert.ToDateTime(DateTime.Now.AddMinutes(RequeueMinutesOffSet).ToString("yyyy-MM-dd HH:mm:ss"));
+                                        inEMid = VocLib.Helpers.Helpers.QueueEmail(pDA, temID, tUnitId, tNotificationID, true, tSendTime, tSendTo, tSendCC, tSendFrom, tSendFromName, tSubject, tBody, "CallM", tErrorRetry, Log);
+                                        if (inEMid > 0)
+                                        {
+                                            Log.Info("EmailSendFromQueue, VocLib.SendSMS requeued-inSMSid:" + inEMid.ToString());
+                                        }
+                                        else
+                                        {
+                                            Log.Error("EmailSendFromQueue, VocLib.SendSMS failed-tsQoID:" + teQoID);
+                                        }
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Error("EmailSendFromQueue, Requeue error-tsQoID:" + teQoID, ex);
+                        }
+                        //End requeue errors
+                    }
+                    else
+                    {
+                        //No more Emails so exit
+                        LoopFlag = false;
+                    }
+
+                    //Check if the max number of sends, if MaxSends < 1 then ignore and do all
+                    if (pMaxSend > 0 && cntSend >= pMaxSend)
+                    {
+                        //Max sends has been reached
+                        LoopFlag = false;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error("EmailSendFromQueue-error.", ex);
+            }
+
+            return RetVal;
+        }
+
+        //Processes the SMS message in the Inbound Queued
+        //Processes anything with status recieved
+        //Set Status to Inprogress while process
+        //Set Staus to Done when processing finished
+        //Return the number of records processed
+        //This method will probably be failry custom as the SMS  format is failry open
+        //Currently it checks for Y<NotificationID> or N<NotificationID>
+        public int ProcessSMSQueueIn(DatabaseAccess pDA, bool optOutEnabled, bool invalidResponseEnabled, int invalidResponseHours)
+        {
+            int RetVal = -1;
+            try
+            {
+                Log.Info("ProcessSMSQueueIn starting...");
+                //Used to pull one record at a time for processing
+                string tSQL = "update SMSQueueIn set Status = 'InProgress', LastUpdated = '{0}' output inserted.* where sQiID = (select top(1) sQiID from SMSQueueIn where status = 'Received' order by sQiID)";
+                //Insert SysInMessages
+                string tSQLin = "Insert into SysInMessages (MessageID, MessageType, ReceivedTime, caNotificationID, MessageFrom, ContactID, Result, MessageDescription, MessageResponse, MessageText, LastUpdated) ";
+                tSQLin += "Values({0}, '{1}', '{2}', {3}, '{4}', '{5}', '{6}', '{7}', '{8}', '{9}', '{10}')";
+                //Update the queue with the results
+                string tSQLup = "update SMSQueueIn set Status = '{0}', LastUpdated = '{1}' where sQiID = {2}";
+                DataRow drSMS;
+                DataSet dsSMS = new DataSet();
+
+                //Check the SMSQueueOut for a corresponding outgoing message and get the accociated PersonID
+                string tSQLid = "select top(1) PersonID from SMSQueueOut where NotificationID = {0} and SMSNumber like '%{1}%' order by sQoID desc";
+                string tPersonID = "";
+
+                //For handling OptOut for the day
+                string tSQLoo = "UPDATE ESP_Employees set OptOutForToday = '{0}' WHERE emID = {1}";
+
+                //KG20151019
+                //Get the status of the ESP CallOut from ESP_Notifications
+                string tSQLnot = "select top(1) Status from ESP_Notifications where caNotificationID = {0} and NotificationType = 'Shift' order by ntID desc";
+                string tESPstatus = "";
+
+                //Stuff for Processing SMS
+                string tsQiID;
+                string tMessage = "";
+
+                //To update SySInMessages
+                string tMessageType = "SMS";    //This method only processes SMS
+                string tReceivedTime = "";
+                string tcaNotificationID = "";
+                string tMessageFrom = "";
+                string tMessageFromClean = "";  //Remove "+" then "1" from number
+                string tResult = "";            //KG20151019
+                string tMessageDescription = "Shift Offer";
+                string tMessageResponse = "";
+                string tMessageText = "";
+                string tLastUpdated = "";
+
+                string tStatus;     //Status to update the SMSQueueIn
+
+                bool partialEnabled = !String.IsNullOrEmpty(ConfigurationManager.AppSettings["PartialBidEnabled"]) ? Convert.ToBoolean(ConfigurationManager.AppSettings["PartialBidEnabled"]) : true;
+
+                //Loop through table as long as there are Received SMS's that have not been processed
+                bool LoopFlag = true;
+                while (LoopFlag)
+                {
+                    RetVal++;
+                    //Init variables for updating SysInMessages
+                    //tMessageType;
+                    tReceivedTime = "";
+                    tcaNotificationID = "0";
+                    int icaNotificationID = 0;
+                    //tMessageFrom
+                    tResult = "Invalid";    //Default to invalid unless we validate the message
+                    //tMessageDescription;
+                    tMessageResponse = "";
+                    tMessageText = "";
+                    tStatus = "Error-Processing";   //Default the status to error;
+
+                    tESPstatus = "";        //KG20151019
+
+                    //See if there are any Received SMS's to process
+                    tLastUpdated = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
+                    dsSMS = pDA.GetDataSet(string.Format(tSQL, tLastUpdated));
+                    if (dsSMS != null && dsSMS.Tables[0].Rows.Count > 0)
+                    {
+                        drSMS = dsSMS.Tables[0].Rows[0];
+                        tReceivedTime = drSMS["ReceivedDate"].ToString().Trim();
+                        tsQiID = drSMS["sQiID"].ToString();
+                        tMessageFrom = drSMS["SMSNumber"].ToString().Trim();
+                        tMessage = drSMS["Message"].ToString().Trim();
+                        dsSMS.Clear();
+
+                        //Shift info for replying to "m" for more
+                        DataSet dsSI = new DataSet();
+                        int cntSI = 0;
+                        int totSI = 0;
+
+                        try
+                        {
+                            //Check/validate response
+                            if (tMessage.ToLower().StartsWith("y") || tMessage.ToLower().StartsWith("n") || (tMessage.ToLower().StartsWith("u") && optOutEnabled) || (tMessage.ToLower().StartsWith("p") && partialEnabled) || tMessage.ToLower().StartsWith("m"))
+                            {
+                                tMessageResponse = tMessage[0].ToString();
+                                //If partial strip off the "message" portion after the first space
+                                if (tMessageResponse.ToLower() == "p")
+                                {
+                                    int tFirstSpace = tMessage.IndexOf(' ');
+                                    string tResponseAndID = tMessage;   //default to full message in case there is no trailing text
+
+                                    //If there is a space remove everything after it and save it to tMessageText
+                                    if (tFirstSpace > 0)
+                                    {
+                                        //Trim off response and NoticiationID
+                                        tResponseAndID = tMessage.Substring(0, tFirstSpace).Trim();
+                                        //Save the rest of the string as the message
+                                        tMessageText = tResponseAndID.Replace(tResponseAndID, "").Trim().Replace(@"'", @"''");
+                                        //Get the text portion of the partial response
+                                        tMessageText = tMessage.Substring(tFirstSpace + 1, tMessage.Length - tFirstSpace - 1).Trim().Replace(@"'", @"''");
+                                        //Save the Response and NotificationID
+                                        tMessage = tResponseAndID;
+                                    }
+                                }
+                                //Remove the 'y' 'n' 'u' or 'p' and see if the rest is an integer
+                                if (int.TryParse(tMessage.Remove(0, 1), out icaNotificationID))
+                                {
+                                    tResult = "Valid";
+                                    //Save the rest as the CallAssure notifcationID
+                                    tcaNotificationID = icaNotificationID.ToString();
+
+                                    //Check for block partial
+                                    int shifts = Convert.ToInt32(pDA.GetValue("SELECT COUNT(*) FROM ESP_ShiftInfo WHERE si_ntID = (SELECT TOP 1 ntID FROM ESP_Notifications WHERE caNotificationID = @RefNum)", "@RefNum", tcaNotificationID));
+                                    if (tMessageResponse.ToLower() == "p" && shifts > 1)
+                                    {
+                                        tResult = "Invalid";
+                                    }
+                                }
+                                else
+                                {
+                                    //Did not receive a valid refernce number/NotificationID
+                                }
+                            }
+
+                            //Lookup PersonID from the out queue
+                            tPersonID = "";
+                            tMessageFromClean = CleanPhoneNumber(tMessageFrom);
+                            tPersonID = pDA.GetValue(string.Format(tSQLid, tcaNotificationID, tMessageFromClean));
+
+                            //Add SMS message from queue to SysInMessages table
+                            tLastUpdated = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
+
+                            if (tPersonID != null && tPersonID.Length > 0 && tResult.ToLower() == "valid")
+                            {
+                                //KG20151019
+                                //Check if the shift is still available - not Awarded or Cancelled
+                                //If Awarded or Cancelled still save to SysInMessages and send regrets
+                                //string tSQLnot = "select top(1) Status from ESP_Notifications where caNotification = {0} and NotificationType = 'Shift' order by ntID desc";
+                                tESPstatus = pDA.GetValue(string.Format(tSQLnot, tcaNotificationID));
+                                if (tESPstatus != null)
+                                {
+                                    if (tESPstatus.ToLower() == "cancelled" || tESPstatus.ToLower() == "awarded")
+                                    {
+                                        tResult = "Closed";
+                                    }
+                                }
+
+                                //Add valid message to SysInMessages
+                                pDA.ExecuteSQL(string.Format(tSQLin, tsQiID, tMessageType, tReceivedTime, tcaNotificationID, tMessageFrom, tPersonID, tResult, tMessageDescription, tMessageResponse, tMessageText, tLastUpdated));
+                                //Set status that that we are done processing
+                                tStatus = "Done";
+
+                                //extra handling based on respones
+                                try
+                                {
+                                    //Respond to SMS send after shift awarded/cancelled
+                                    if (tPersonID != null && tPersonID.Length > 0 && (tMessageResponse.ToLower() == "y" || tMessageResponse.ToLower() == "n" || tMessageResponse.ToLower() == "p" || tMessageResponse.ToLower() == "m") && tResult.ToLower() == "closed")
+                                    {
+                                        //For building the SMS
+                                        string tSMSMessageC = "";
+                                        string tSMSskeletonC = GetMessageContent("BiddingClosedSMS", pDA);
+
+                                        //To insert SMS in the queue
+                                        string tInsertTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");  //Use the dame insert time for all the messages
+                                        string tSMSOutStatus = "Queued";
+                                        string temID = "";
+                                        string tActive = "True";
+                                        string tEnteredBy = "CallM";
+
+                                        if (tPersonID != null && tPersonID.Length > 0)
+                                        {
+                                            temID = tPersonID;
+                                        }
+
+                                        string tSQLInsB = "";
+                                        tSQLInsB = "Insert into SMSQueueOut (InsertTime, SendTime, SMSNumber, Message, PersonID, Active, Status, EnteredBy, LastUpdated)";
+                                        tSQLInsB += " Values('" + tInsertTime + "', '" + tInsertTime + "', '" + tMessageFromClean + "', '{0}', '" + temID + "', '" + tActive + "', '" + tSMSOutStatus + "', '" + tEnteredBy + "', '{1}')";
+
+                                        tSMSMessageC = tSMSskeletonC.Replace("%Ref%", tcaNotificationID);
+
+                                        //Inset message into SMSQueueOut
+                                        tLastUpdated = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
+                                        pDA.ExecuteSQL(string.Format(tSQLInsB, tSMSMessageC, tLastUpdated));
+                                    }
+
+                                    //Handle OptOut for the day
+                                    if (tPersonID != null && tPersonID.Length > 0 && tMessageResponse.ToLower() == "u" && tResult.ToLower() == "valid")
+                                    {
+                                        //string tSQLoo = "UPDATE ESP_Employees set OptOutForToday = '{0}' WHERE emID = {1}";
+                                        pDA.ExecuteSQL(string.Format(tSQLoo, tLastUpdated, tPersonID));
+                                    }
+                                    //For blocks of shifts send the deatils of each shift 1 SMS at a time
+                                    if (tPersonID != null && tPersonID.Length > 0 && tMessageResponse.ToLower() == "m" && tResult.ToLower() == "valid")
+                                    {
+                                        string tSQLsi = "select ESP_ShiftInfo.*, ESP_Notifications.ntID from ESP_ShiftInfo, ESP_Notifications where caNotificationID = {0} and Notificationtype = 'Shift' and ntID = si_ntID";
+                                        dsSI = pDA.GetDataSet(string.Format(tSQLsi, tcaNotificationID));
+                                        if (dsSI != null && dsSI.Tables[0].Rows.Count > 1)
+                                        {
+                                            cntSI = 0;
+                                            totSI = dsSI.Tables[0].Rows.Count;
+                                            //For building the SMS
+                                            string tSMSDate = "";
+                                            string tSMSStartTime = "";
+                                            string tSMSEndTime = "";
+                                            string tIcon = "";
+                                            string tUnit = "";
+                                            string tSMSMessageB = "";
+
+                                            string tSMSskeletonB = GetMessageContent("BlockSkeletonSMS", pDA);
+                                            //To insert SMS in the queue
+                                            string tInsertTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");  //Use the dame insert time for all the messages
+                                            string tSMSOutStatus = "Queued";
+                                            string temID = "";
+                                            string tActive = "True";
+                                            string tEnteredBy = "CallM";
+
+                                            if (tPersonID != null && tPersonID.Length > 0)
+                                            {
+                                                temID = tPersonID;
+                                            }
+                                            string tSQLInsB = "";
+                                            tSQLInsB = "Insert into SMSQueueOut (InsertTime, SendTime, SMSNumber, Message, PersonID, Active, Status, EnteredBy, LastUpdated)";
+                                            tSQLInsB += " Values('" + tInsertTime + "', '" + tInsertTime + "', '" + tMessageFromClean + "', '{0}', '" + temID + "', '" + tActive + "', '" + tSMSOutStatus + "', '" + tEnteredBy + "', '{1}')";
+
+                                            //If there is more than one shift queue an SMS for each
+                                            foreach (DataRow drSI in dsSI.Tables[0].Rows)
+                                            {
+                                                cntSI++;
+                                                //Build SMS
+                                                tSMSDate = GetSMSDate(drSI["StartTime"].ToString());
+                                                tSMSStartTime = GetSMSTime(drSI["StartTime"].ToString().Trim());
+                                                tSMSEndTime = GetSMSTime(drSI["EndTime"].ToString().Trim());
+                                                tIcon = drSI["Icon"].ToString().Trim();
+                                                if (drSI["UnitComment"] != null)
+                                                {
+                                                    tUnit = drSI["UnitComment"].ToString().Trim();
+                                                }
+                                                else
+                                                {
+                                                    tUnit = drSI["UnitID"].ToString().Trim();
+                                                }
+                                                //Reset to skeleton message
+                                                tSMSMessageB = tSMSskeletonB;
+                                                //Replace with specific shift values
+                                                tSMSMessageB = tSMSMessageB.Replace("%StartDate%", tSMSDate);
+                                                tSMSMessageB = tSMSMessageB.Replace("%StartTime%", tSMSStartTime);
+                                                tSMSMessageB = tSMSMessageB.Replace("%EndTime%", tSMSEndTime);
+                                                tSMSMessageB = tSMSMessageB.Replace("%Ref%", tcaNotificationID);
+                                                tSMSMessageB = tSMSMessageB.Replace("%Icon%", tIcon);
+                                                tSMSMessageB = tSMSMessageB.Replace("%Unit%", tUnit);
+                                                tSMSMessageB = tSMSMessageB.Replace("%ShiftCounter%", cntSI.ToString());
+                                                tSMSMessageB = tSMSMessageB.Replace("%ShiftTotal%", totSI.ToString());
+
+                                                //Inset message into SMSQueueOut
+                                                tLastUpdated = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
+                                                pDA.ExecuteSQL(string.Format(tSQLInsB, tSMSMessageB, tLastUpdated));
+
+                                            }
+                                        }
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    Log.Error("ProcessSMSQueueIn-Do Optout error:" + ex.Message);
+                                }
+                            }
+                            else
+                            {
+                                if (invalidResponseEnabled && Convert.ToDateTime(tReceivedTime) >= DateTime.Now.Subtract(new TimeSpan(invalidResponseHours, 0, 0)))
+                                {
+                                    string tSMSMessageI = GetMessageContent("InvalidResponseSMS", pDA);
+                                    string tInsertTime = "";
+                                    string tSMSOutStatus = "Queued";
+                                    string temID = "";
+                                    string tActive = "True";
+                                    string tEnteredBy = "CallM";
+
+                                    if (tPersonID != null && tPersonID.Length > 0)
+                                    {
+                                        temID = tPersonID;
+                                    }
+
+                                    tLastUpdated = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
+                                    tInsertTime = tLastUpdated;
+                                    string tSQLInvIns = "";
+                                    tSQLInvIns = "Insert into SMSQueueOut (InsertTime, SendTime, SMSNumber, Message, PersonID, Active, Status, EnteredBy, LastUpdated)";
+                                    tSQLInvIns += " Values('" + tInsertTime + "', '" + tInsertTime + "', '" + tMessageFromClean + "', '" + tSMSMessageI + "', '" + temID + "', '" + tActive + "', '" + tSMSOutStatus + "', '" + tEnteredBy + "', '" + tLastUpdated + "')";
+
+                                    tSQLInvIns = pDA.GetValue(tSQLInvIns);
+                                }
+
+                                tStatus = "Done";
+                            }
+                        }
+                        catch (Exception ex)    //Catch any error updating the SysMessages table
+                        {
+                            //Add log
+                            Log.Error("ProcessSMSQueueIn-Insert into SysInMessages error:" + ex.Message);
+                        }
+                        //Update SMSQueueIn with status from processing
+                        pDA.ExecuteSQL(string.Format(tSQLup, tStatus, tLastUpdated, tsQiID));   //"update SMSQueueIn set Status = '{0}', LastUpdated = '{1}' where sQiID = {2}";
+
+                    }
+                    else
+                    {
+                        //No more SMS to process
+                        LoopFlag = false;
+                    }
+
+                }
+
+            }
+
+            catch (Exception ex)
+            {
+                Log.Error("ProcessSMSQueueIn-error:" + ex.Message);
+            }
+            return RetVal;
+        }
+
+        //Processes the Email message in the Inbound Queued
+        //Processes anything with status recieved
+        //Set Status to Inprogress while process
+        //Set Staus to Done when processing finished
+        //Return the number of records processed
+        //This method will probably be failry custom as the email  format is failry open
+        //Currently it checks for the ID number in the subject line, and the body starting with "yes" or "no"
+        public int ProcessEmailQueueIn(DatabaseAccess pDA, string pEmailSendFrom, string pEmailSendFromName, bool optOutEnabled, bool invalidResponseEnabled, int invalidResponseHours)
+        {
+            int RetVal = -1;
+            try
+            {
+                Log.Info("ProcessEmailQueueIn starting...");
+                //Used to pull one record at a time for processing
+                string tSQL = "update EmailQueueIn set Status = 'InProgress', LastUpdated = '{0}' output inserted.* where eQiID = (select top(1) eQiID from EmailQueueIn where status = 'Received' order by eQiID)";
+                //Insert SysInMessages
+                //string tSQLin = "Insert into SysInMessages (MessageID, MessageType, ReceivedTime, caNotificationID, MessageFrom, Result, MessageDescription, MessageResponse, LastUpdated) ";
+                //tSQLin += "Values({0}, '{1}', '{2}', {3}, '{4}', '{5}', '{6}', '{7}', '{8}')";
+                string tSQLin = "Insert into SysInMessages (MessageID, MessageType, ReceivedTime, caNotificationID, MessageFrom, ContactID, Result, MessageDescription, MessageResponse, MessageText, LastUpdated) ";
+                tSQLin += "Values({0}, '{1}', '{2}', {3}, '{4}', '{5}', '{6}', '{7}', '{8}', '{9}', '{10}')";
+
+                string tSQLinFull = "";
+                //Update the queue with the results
+                string tSQLup = "update EmailQueueIn set Status = '{0}', LastUpdated = '{1}' where eQiID = {2}";
+                DataRow drEM;
+                DataSet dsEM = new DataSet();
+
+                //Check the SMSQueueOut for a corresponding outgoing message and get the accociated PersonID
+                string tSQLid = "select top(1) PersonID from EmailQueueOut where NotificationID = {0} and SendTo like '%{1}%' order by eQoID desc";
+                string tPersonID = "";
+
+                //For handling OptOut for the day
+                string tSQLoo = "UPDATE ESP_Employees set OptOutForToday = '{0}' WHERE emID = {1}";
+
+                //KG20151019
+                //Get the status of the ESP CallOut from ESP_Notifications
+                string tSQLnot = "select top(1) Status from ESP_Notifications where caNotificationID = {0} and NotificationType = 'Shift' order by ntID desc";
+                string tESPstatus = "";
+
+                //Stuff for Processing Email
+                string teQiID;
+                string tSubject = "";
+                string tBody = "";
+
+                //To update SySInMessages
+                string tMessageType = "Email";    //This method only processes Email
+                string tReceivedTime = "";
+                string tcaNotificationID = "";
+                string tMessageFrom = "";
+                string tResult = "";
+                string tMessageDescription = "Shift Offer";  //mEmailLocalizationDAL.GetEmailLocalizationByID(mlstEmailLocalization, 7); //"Shift Offer";
+                string tMessageResponse = "";
+                string tMessageText = "";
+                string tLastUpdated = "";
+                string tFirstLetterResponse = "";   //the first letter in the body is now considered the response
+
+                string tStatus;     //Status to update the EmailQueueIn
+
+                bool partialEnabled = !String.IsNullOrEmpty(ConfigurationManager.AppSettings["PartialBidEnabled"]) ? Convert.ToBoolean(ConfigurationManager.AppSettings["PartialBidEnabled"]) : true;
+
+                //Loop through table as long as there are Received Email's that have not been processed
+                bool LoopFlag = true;
+                while (LoopFlag)
+                {
+                    RetVal++;
+                    //Init variables for updating SysInMessages
+                    //tMessageType;
+                    tReceivedTime = "";
+                    tcaNotificationID = "0";
+                    //tMessageFrom
+                    tResult = "Invalid";    //Default to invalid unless we validate the message
+                    //tMessageDescription;
+                    tMessageResponse = "";
+                    tMessageText = "";
+                    tStatus = "Error-Processing";   //Default the status to error;
+
+                    tESPstatus = "";        //KG20151019
+
+                    tSQLinFull = "";    //Reset formatted SQL statement for inserting into SysInMessages
+
+                    //See if there are any Received Emails to process
+                    tLastUpdated = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
+                    dsEM = pDA.GetDataSet(string.Format(tSQL, tLastUpdated));
+                    if (dsEM != null && dsEM.Tables[0].Rows.Count > 0)
+                    {
+                        drEM = dsEM.Tables[0].Rows[0];
+                        tReceivedTime = drEM["ReceivedTime"].ToString().Trim();
+                        teQiID = drEM["eQiID"].ToString();
+                        tMessageFrom = drEM["ReceivedFrom"].ToString().Trim();
+                        tSubject = drEM["Subject"].ToString().Trim();
+                        tBody = drEM["Body"].ToString().Trim();
+                        dsEM.Clear();
+
+                        //Check if the email response if formated properly - a reference number and a "yes" or "no"
+                        //tcaNotificationID = GetIDFromString(tSubject); //No longer comes from subject line
+                        //if ((tBody.ToLower().StartsWith("yes") || tBody.ToLower().StartsWith("no") || tBody.ToLower().StartsWith("unavailable") || tBody.ToLower().StartsWith("partial"))
+
+                        tFirstLetterResponse = "";
+                        if (tBody.Length > 1)
+                        {
+                            //get the first letter as their respnse
+                            tFirstLetterResponse = tBody.Substring(0,1);
+                            tcaNotificationID = GetIDFromBody(ref tBody);  //Notifcation ID now comes from the body
+                        }
+                        if (tFirstLetterResponse.ToLower() == "y" || tFirstLetterResponse.ToLower() == "n" || (tFirstLetterResponse.ToLower() == "u" && optOutEnabled) || (tFirstLetterResponse.ToLower() == "p" && partialEnabled))
+                        {
+                            tMessageText = tBody;
+                            //Save the yes/no email response
+                            tMessageResponse = "Yes";
+                            if (tFirstLetterResponse.ToLower() == "y")
+                            {
+                                tMessageResponse = "Yes";
+                                tMessageText = "";
+                            }
+                            else if (tFirstLetterResponse.ToLower() == "n")
+                            {
+                                tMessageResponse = "No";
+                                tMessageText = "";
+                            }
+                            else if (tFirstLetterResponse.ToLower() == "u")
+                            {
+                                tMessageResponse = "Unavailable";
+                                tMessageText = "";
+                            }
+                            else if (tFirstLetterResponse.ToLower() == "p")
+                            {
+                                tMessageResponse = "Partial";
+                                //Look for first carriage return
+                                int tFirstRet = 0;
+                                tFirstRet = tMessageText.IndexOf(Environment.NewLine);
+                                if (tFirstRet >= 0)
+                                {
+                                    //Trim to the first carriage return
+                                    tMessageText = tMessageText.Substring(0, tFirstRet).Trim();
+                                }
+                                //Save the rest of the body (up to 140 characters) as text
+                            }
+                            if (tcaNotificationID != "0")
+                            {
+                                //If there is a NotifcatioID and a yes/no in the body response is valid
+                                tResult = "Valid";
+
+                                //Check for block partial
+                                int shifts = Convert.ToInt32(pDA.GetValue("SELECT COUNT(*) FROM ESP_ShiftInfo WHERE si_ntID = (SELECT TOP 1 ntID FROM ESP_Notifications WHERE caNotificationID = @RefNum)", "@RefNum", tcaNotificationID));
+                                if (tMessageResponse.ToLower() == "partial" && shifts > 1)
+                                {
+                                    tResult = "Invalid";
+                                }
+                            }
+                            else
+                            {
+                                //Did not receive a valid refernce number/NotificationID
+                            }
+                        }
+
+                        //Lookup PersonID from the out queue
+                        tPersonID = "";
+                        //tSQLid = "select top(1) PersonID from EmailQueueOut where NotificationID = {0} and SendTo like '%{1}%' order by eQoID desc";
+                        tPersonID = pDA.GetValue(string.Format(tSQLid, tcaNotificationID, tMessageFrom));
+
+                        //Add Email message from queue to SysInMessages table
+                        tLastUpdated = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
+                        try
+                        {
+                            //If the response and ID are valid and we found the person save this to SysInMessages
+                            if (tPersonID != null && tPersonID.Length > 0 && tResult.ToLower() == "valid")
+                            {
+                                //KG20151019
+                                //Check if the shift is still available - not Awarded or Cancelled
+                                //If Awarded or Cancelled still save to SysInMessages and send regrets
+                                //string tSQLnot = "select top(1) Status from ESP_Notifications where caNotification = {0} and NotificationType = 'Shift' order by ntID desc";
+                                tESPstatus = pDA.GetValue(string.Format(tSQLnot, tcaNotificationID));
+                                if (tESPstatus != null)
+                                {
+                                    if (tESPstatus.ToLower() == "cancelled" || tESPstatus.ToLower() == "awarded")
+                                    {
+                                        tResult = "Closed";
+                                    }
+                                }
+
+                                //Handle single quote and ensure the message isn't too long
+                                tMessageText = tMessageText.Replace(@"'", @"''");
+                                if (tMessageText.Length > 140)
+                                {
+                                    //Make sure we save max at 140 characters
+                                    tMessageText = tMessageText.Substring(0, 139);
+                                }
+
+                                //string tSQLin = "Insert into SysInMessages (MessageID, MessageType, ReceivedTime, caNotificationID, MessageFrom, ContactID, Result, MessageDescription, MessageResponse, MessageText, LastUpdated) ";
+                                //tSQLin += "Values({0}, '{1}', '{2}', {3}, '{4}', '{5}', '{6}', '{7}', '{8}', '{9}', '{10}')";
+
+                                tSQLinFull = string.Format(tSQLin, teQiID, tMessageType, tReceivedTime, tcaNotificationID, tMessageFrom, tPersonID, tResult, tMessageDescription, tMessageResponse, tMessageText, tLastUpdated);
+                                pDA.ExecuteSQL(tSQLinFull);
+                                //Set status that that we are done processing
+                                tStatus = "Done";
+
+                                try
+                                {
+                                    //KG20151019
+                                    //Respond to email sent after shift awarded/cancelled
+                                    if (tPersonID != null && tPersonID.Length > 0 && (tMessageResponse.ToLower() == "yes" || tMessageResponse.ToLower() == "partial") && tResult.ToLower() == "closed")
+                                    {
+                                        //Queue up a Response email that shift is closed
+                                        string teQoID = "";         //Identity seed of SMS queued
+                                        string tEmailSubject = "";
+                                        string tEmailBody = "";
+                                        string tSendFrom = pEmailSendFrom;
+                                        string tSendFromName = pEmailSendFromName;
+                                        string tSendTo = tMessageFrom;
+                                        string tInsertTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
+                                        string tEmailOutStatus = "Queued";
+                                        string temID = "";
+                                        string tActive = "True";
+                                        string tEnteredBy = "CallM";
+
+                                        if (tPersonID != null && tPersonID.Length > 0)
+                                        {
+                                            temID = tPersonID;
+                                        }
+
+                                        tEmailSubject = GetMessageContent("BiddingClosedEmailSubject", pDA);
+                                        tEmailBody = GetMessageContent("BiddingClosedEmailBody", pDA);
+
+                                        tEmailSubject = tEmailSubject.Replace("%Ref%", tcaNotificationID);
+                                        tEmailBody = tEmailBody.Replace("%Ref%", tcaNotificationID);
+
+                                        tLastUpdated = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
+                                        string tSQLc = "";
+                                        tSQLc = "Insert into EmailQueueOut (InsertTime, SendTime, SendTo, SendFrom, SendFromName, Subject, Body, PersonID, Active, Status, EnteredBy, LastUpdated)";
+                                        tSQLc += " Values('" + tInsertTime + "', '" + tInsertTime + "', '" + tSendTo + "', '" + tSendFrom + "', '" + tSendFromName + "', '" + tEmailSubject + "', '" + tEmailBody + "', '" + temID + "', '" + tActive + "', '" + tEmailOutStatus + "', '" + tEnteredBy + "', '" + tLastUpdated + "')";
+                                        //Add to email queue;
+                                        teQoID = pDA.GetValue(tSQLc);
+                                        //Set status that that we are done processing
+
+                                    }
+
+                                    //Handle OptOut for the day
+                                    if (tMessageResponse.ToLower() == "unavailable" && tResult.ToLower() == "valid" && tPersonID.Length > 0)
+                                    {
+                                        //string tSQLoo = "UPDATE ESP_Employees set OptOutForToday = '{0}' WHERE emID = {1}";
+                                        pDA.ExecuteSQL(string.Format(tSQLoo, tLastUpdated, tPersonID));
+                                    }
+                                }
+                                catch (Exception ex)
+                                {
+                                    Log.Error("ProcessSMSQueueIn-Do Optout error:" + ex.Message);
+                                }
+                            }
+                            else
+                            {
+                                if (invalidResponseEnabled && Convert.ToDateTime(tReceivedTime) >= DateTime.Now.Subtract(new TimeSpan(invalidResponseHours, 0, 0)))
+                                {
+                                    //Queue up a Invalid Response email
+                                    string teQoID = "";         //Identity seed of SMS queued
+                                    string tEmailSubject = "";
+                                    string tEmailBody = "";
+                                    string tSendFrom = pEmailSendFrom;
+                                    string tSendFromName = pEmailSendFromName;
+                                    string tSendTo = tMessageFrom;
+                                    string tInsertTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
+                                    string tEmailOutStatus = "Queued";
+                                    string temID = "";
+                                    string tActive = "True";
+                                    string tEnteredBy = "CallM";
+
+                                    if (tPersonID != null && tPersonID.Length > 0)
+                                    {
+                                        temID = tPersonID;
+                                    }
+
+                                    //Set Subject and body
+                                    tEmailSubject = GetMessageContent("InvalidResponseEmailSubject", pDA);
+                                    tEmailBody = GetMessageContent("InvalidResponseEmailBody", pDA);
+
+                                    tLastUpdated = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss.fff");
+                                    string tSQLInvIns = "";
+                                    tSQLInvIns = "Insert into EmailQueueOut (InsertTime, SendTime, SendTo, SendFrom, SendFromName, Subject, Body, PersonID, Active, Status, EnteredBy, LastUpdated)";
+                                    tSQLInvIns += " Values('" + tInsertTime + "', '" + tInsertTime + "', '" + tSendTo + "', '" + tSendFrom + "', '" + tSendFromName + "', '" + tEmailSubject + "', '" + tEmailBody + "', '" + temID + "', '" + tActive + "', '" + tEmailOutStatus + "', '" + tEnteredBy + "', '" + tLastUpdated + "')";
+                                    //Add to email queue;
+                                    teQoID = pDA.GetValue(tSQLInvIns);
+                                }
+
+                                //Set status that that we are done processing
+                                tStatus = "Done";
+                            }
+                        }
+                        catch (Exception ex)    //Catch any error updating the SysMessages table
+                        {
+                            //Add log
+                            Log.Error("ProcessEmailQueueIn-Insert SysInMessages error:" + ex.Message);
+                            Log.Error("ProcessEmailQueueIn-Insert SysInMessages error tSQLinFull:" + tSQLinFull);
+                        }
+
+                        //Update eamilQueueIn with status from processing
+                        pDA.ExecuteSQL(string.Format(tSQLup, tStatus, tLastUpdated, teQiID));   //"update EmailQueueIn set Status = '{0}', LastUpdated = '{1}' where sQiID = {2}";
+                    }
+                    else
+                    {
+                        //No more Emails to process
+                        LoopFlag = false;
+                    }
+
+                }
+
+            }
+
+            catch (Exception ex)
+            {
+                Log.Error("ProcessEmailQueueIn-error:" + ex.Message);
+            }
+            return RetVal;
+        }
+
+        public int EmailGetMessages(DatabaseAccess pDA)
+        {
+            int RetVal = 0;
+            try
+            {
+                Log.Info("EmailGetMessages starting...");
+                // Retrieve config data form app.config
+                string username = ConfigurationManager.AppSettings["UserName"];
+                string password = ConfigurationManager.AppSettings["Password"];
+                string domain = ConfigurationManager.AppSettings["Domain"];
+                string tURL = ConfigurationManager.AppSettings["URL"];
+                string sExchangeVersion = ConfigurationManager.AppSettings["ExchangeVersion"];
+                Log.Info("EmailGetMessages-Username:" + username + " Password:" + password.Substring(0, 2) + "*** Domain:" + domain);
+                // Set default name for extended property if not present in config file
+                string extendedPropertyFieldName = ConfigurationManager.AppSettings["EwsExtendedPropertyProcessed"] ?? "VocantasProcessed";
+
+                if (username == null || password == null || domain == null)
+                {
+                    // ToDo: Log
+                    return RetVal;
+                }
+
+                string discoveryEmail = @username + @"@" + @domain;
+
+                int maxEmailsRetrievedAtOnce;
+                // Set default value of maxEmailsRetrievedAtOnce = 50 if not present in config file;
+                if (!int.TryParse(ConfigurationManager.AppSettings["MaxEmailsRetrievedAtOnce"], out maxEmailsRetrievedAtOnce))
+                {
+                    // use this as default if not set in appconfig
+                    maxEmailsRetrievedAtOnce = 50;
+                }
+
+                //DENIS - 19-04-2017  - Add exchange version configuration support
+                ExchangeService service = null;
+                if (sExchangeVersion != null && sExchangeVersion != "")
+                {
+                    switch (sExchangeVersion)
+                    {
+                        case "Exchange2007_SP1":
+                            service = new ExchangeService(ExchangeVersion.Exchange2007_SP1);
+                            break;
+                        case "Exchange2010":
+                            service = new ExchangeService(ExchangeVersion.Exchange2010);
+                            break;
+                        case "Exchange2010_SP1":
+                            service = new ExchangeService(ExchangeVersion.Exchange2010_SP1);
+                            break;
+                        case "Exchange2010_SP2":
+                            service = new ExchangeService(ExchangeVersion.Exchange2010_SP2);
+                            break;
+                        case "Exchange2013":
+                            service = new ExchangeService(ExchangeVersion.Exchange2013);
+                            break;
+                        case "Exchange2013_SP1":
+                            service = new ExchangeService(ExchangeVersion.Exchange2013_SP1);
+                            break;
+                    }
+                }
+                else
+                {
+                    //Default to 2010
+                    service = new ExchangeService(ExchangeVersion.Exchange2010);
+                }
+
+                // Set network credentials for the Exchange email account being looked up
+                service.Credentials = new System.Net.NetworkCredential(username, password, domain);
+                Log.Info("EmailGetMessages-Exchange service created");
+                //service.UseDefaultCredentials = true;
+
+                // Next 2 lines allow tracing
+                //service.TraceEnabled = true;
+                //service.TraceFlags = TraceFlags.All;
+
+                //KG20150630 Take out auto discover.  Get URL from config file.
+                service.Url = new Uri(tURL);
+                //try
+                //{
+                //    service.AutodiscoverUrl(@discoveryEmail, RedirectionUrlValidationCallback);
+                //    eLog.WriteError("EmailGetMessages AutodiscoverURL-URL:" + service.Url.AbsoluteUri);
+                //}
+                //catch (AutodiscoverLocalException ex)   // Local failure (ex: blocked redirection, a number of redirections greater than the maximum, caused Autodiscover to stop)
+                //{
+                //    // Todo: Log
+                //    return 0;
+                //}
+                //catch (Microsoft.Exchange.WebServices.Autodiscover.AutodiscoverRemoteException ex)  // The Autodiscover server returned an error.
+                //{
+                //    // Todo: Log
+                //    return 0;
+                //}
+                //catch (ServiceValidationException)  // Empty emailAddress was passed as parameter
+                //{
+                //    // Todo: Log
+                //    return 0;
+                //}
+
+                // Create Extended Property to track if email has been processed
+                ExtendedPropertyDefinition extendedProperty = new ExtendedPropertyDefinition(DefaultExtendedPropertySet.PublicStrings, extendedPropertyFieldName, MapiPropertyType.Boolean);
+
+                ItemView itemView = new ItemView(maxEmailsRetrievedAtOnce);
+
+                itemView.PropertySet = new PropertySet(BasePropertySet.IdOnly);
+                itemView.OrderBy.Add(ItemSchema.DateTimeReceived, SortDirection.Ascending);
+
+                // Search filter where extended property doesn't exist
+                // We will set this extended property later so that we do not process this email again.
+                SearchFilter filter = new SearchFilter.Not(new SearchFilter.Exists(extendedProperty));
+                //SearchFilter filter = new SearchFilter.Exists(extendedProperty);
+
+                // Find all items that do not have a Processed flag set
+                Log.Info("EmailGetMessages-Finding results");
+                FindItemsResults<Item> findResults = service.FindItems(WellKnownFolderName.Inbox, filter, itemView);
+                Log.Info("EmailGetMessages-Results count:" + findResults.Items.Count);
+
+                if (findResults.Items.Count > 0)
+                {
+                    RetVal = findResults.Items.Count;
+                    // Set property set to only retrieve pertinent properties
+                    PropertySet propertySet = new PropertySet(EmailMessageSchema.DateTimeReceived,
+                                                                EmailMessageSchema.From,
+                                                                EmailMessageSchema.Subject,
+                                                                EmailMessageSchema.Body,
+                                                                EmailMessageSchema.ToRecipients,
+                                                                EmailMessageSchema.CcRecipients);
+                    // Set body type to text rather than Html
+                    propertySet.RequestedBodyType = BodyType.Text;
+
+                    service.LoadPropertiesForItems(findResults, propertySet);
+
+                    RetVal = ProcessEmailQueueIns(pDA, findResults.Items, extendedProperty);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error("EmailGetMessages-error:" + ex.Message);
+            }
+
+            return RetVal;
+        }
+     
+
+        #endregion
+    }
+}
